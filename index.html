@@ -432,7 +432,7 @@ button{font-family:inherit}
       ],
       bitacora: [
         { id: 2, en: new Date(t0 - 6 * min).toISOString(), actor: "puerta", canal: "whatsapp", evento: "wa_mensaje_recibido", detalle: {} },
-        { id: 1, en: new Date(t0 - 50 * min).toISOString(), actor: "jorge", canal: "pantalla", evento: "encendido", detalle: {} },
+        { id: 1, en: new Date(t0 - 50 * min).toISOString(), actor: "dueno", canal: "pantalla", evento: "encendido", detalle: {} },
       ],
       mensajes: [
         { id: 2, direccion: "saliente", tipo: "text", texto: "Recibido. Todavía no tengo cerebro conectado; por ahora solo guardo tu mensaje.", creado_en: new Date(t0 - 6 * min + 2000).toISOString() },
@@ -468,9 +468,9 @@ button{font-family:inherit}
         const a = m.aprobaciones.find((x) => x.id === id);
         if (!a || a.estado !== "pendiente") throw new Error("Esa aprobación ya no está pendiente");
         a.estado = decision === "aprobar" ? "aprobada" : "rechazada"; a.decidida_en = new Date().toISOString();
-        anota("jorge", decision === "aprobar" ? "aprobacion_aprobada" : "aprobacion_rechazada", { titulo: a.titulo });
+        anota("dueno", decision === "aprobar" ? "aprobacion_aprobada" : "aprobacion_rechazada", { titulo: a.titulo });
       },
-      async modo(x) { m.modo = x; anota("jorge", x === "off" ? "apagado" : "encendido"); },
+      async modo(x) { m.modo = x; anota("dueno", x === "off" ? "apagado" : "encendido"); },
     };
   }
 
