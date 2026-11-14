@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sabrina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Reenie+Beanie&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:#EDF2F4}
+a{color:inherit}
+button{font-family:inherit}
+[hidden]{display:none!important}
+
+/* ── Tema: día y noche ── */
+.onda{--bg:#EDF2F4;--ink:#0E1820;--ink2:#3B4A55;--glass:rgba(255,255,255,.6);--pozo:rgba(255,255,255,.5);--edge:rgba(255,255,255,.95);--line:rgba(14,24,32,.16);--b1:#B9D5E4;--b2:#93B2C4;--b3:#F4AE86;--pri:#0E1820;--priInk:#F4F8FA;--sig:#F2743E;--sigInk:#0E1820;--ok:#0B6B6A;--warn:#8A5A00;--sombra:0 24px 60px rgba(14,24,32,.18);--trazo:rgba(14,24,32,.42)}
+.onda.noche{--bg:#070C13;--ink:#EAF2F6;--ink2:#A9BCC8;--glass:rgba(24,37,50,.58);--pozo:rgba(8,14,22,.5);--edge:rgba(170,205,228,.28);--line:rgba(200,225,240,.16);--b1:#1F5676;--b2:#113149;--b3:#8A3F1B;--pri:#EAF2F6;--priInk:#0A1118;--sig:#FF8A4C;--sigInk:#0A1118;--ok:#6FD6CF;--warn:#F2C14E;--sombra:0 26px 70px rgba(0,0,0,.55);--trazo:rgba(210,232,245,.38)}
+
+@keyframes deriva{0%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,-50px) scale(1.14)}100%{transform:translate(-50px,40px) scale(.94)}}
+@keyframes morfo{0%,100%{border-radius:58% 42% 55% 45%/46% 56% 44% 54%}33%{border-radius:44% 56% 40% 60%/58% 42% 58% 42%}66%{border-radius:52% 48% 62% 38%/40% 60% 46% 54%}}
+@keyframes giro{to{transform:rotate(360deg)}}
+@keyframes pulso{0%{box-shadow:0 0 0 0 var(--sig)}100%{box-shadow:0 0 0 22px rgba(0,0,0,0)}}
+@keyframes onda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.onda *{animation:none!important}}
+
+.onda{position:relative;min-height:100vh;overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.35 'Space Grotesk',system-ui,sans-serif}
+.fondo{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.mancha{position:absolute;border-radius:50%}
+.mancha.a{left:-120px;top:-140px;width:620px;height:620px;background:var(--b1);filter:blur(70px);opacity:.85;animation:deriva 26s ease-in-out infinite alternate}
+.mancha.b{right:-160px;top:180px;width:700px;height:700px;background:var(--b2);filter:blur(80px);opacity:.7;animation:deriva 34s ease-in-out infinite alternate-reverse}
+.mancha.c{left:38%;bottom:-220px;width:520px;height:520px;background:var(--b3);filter:blur(90px);opacity:.5;animation:deriva 30s ease-in-out infinite alternate}
+.trazos{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mano{font-family:'Reenie Beanie',cursive}
+.puntos{font-family:Doto,monospace;font-weight:900}
+.tenue{color:var(--ink2);font-size:12px}
+
+/* ── Botones ── */
+.boton{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:transparent;color:inherit;font:500 13px 'Space Grotesk',sans-serif;cursor:pointer;white-space:nowrap}
+.boton:hover{opacity:.85}
+.boton:disabled{opacity:.45;cursor:default}
+.boton.cristal{border-color:var(--edge);background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.boton.fuerte{border:0;background:var(--pri);color:var(--priInk)}
+.boton.redondo{width:44px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.boton.liso{border:0}
+.boton:focus-visible,.asa:focus-visible,.orbe button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+
+/* ── Encabezado ── */
+.barra{position:absolute;left:24px;right:24px;top:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:40}
+.barra .lado{display:flex;align-items:center;gap:10px}
+.marca{font-size:52px;line-height:.8}
+.estado{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.foco{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.foco.alerta{background:var(--sig)}
+.reloj{display:flex;flex-direction:column;align-items:flex-end;margin-right:6px}
+.reloj .puntos{font-size:34px;line-height:1;letter-spacing:.04em}
+
+/* ── Orbe central ── */
+.orbe{position:absolute;left:50%;top:74px;width:290px;height:250px;transform:translateX(-50%);z-index:1}
+.orbe .masa{position:absolute;inset:6px 18px;background:radial-gradient(circle at 34% 30%,var(--edge),var(--b1) 46%,var(--b2) 100%);opacity:.9;animation:morfo 14s ease-in-out infinite;box-shadow:var(--sombra)}
+.orbe .aro{position:absolute;inset:0;border:1px solid var(--trazo);border-radius:46% 54% 48% 52%/54% 44% 56% 46%;animation:giro 48s linear infinite}
+.orbe .aro2{position:absolute;inset:26px 40px;border:1px dashed var(--trazo);animation:morfo 20s ease-in-out infinite reverse}
+.orbe button{position:absolute;inset:0;border:0;background:transparent;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.orbe .puntos{font-size:84px;line-height:.9}
+
+/* ── Píldora de aviso ── */
+.aviso{position:absolute;left:50%;top:334px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:6px 16px;min-height:44px;border-radius:26px;background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);box-shadow:var(--sombra);z-index:2;max-width:min(640px,calc(100vw - 32px))}
+.aviso .foco{width:10px;height:10px}
+.aviso.urge .foco{background:var(--sig);animation:pulso 1.6s ease-out 3}
+
+/* ── Ventanas de cristal ── */
+.ventana{position:absolute;background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:var(--sombra);padding:10px 14px 14px;z-index:10}
+.ventana .cabeza{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.asa{flex:1 1 auto;display:flex;align-items:baseline;gap:10px;min-height:44px;border:0;background:transparent;color:inherit;cursor:grab;touch-action:none;text-align:left;padding:0;min-width:0}
+.asa:active{cursor:grabbing}
+.asa h2{font:400 32px/1 'Reenie Beanie',cursive;margin:0;white-space:nowrap}
+.cierra{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:var(--ink2);cursor:pointer;font-size:20px;line-height:1;flex:none}
+.cuerpo{display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 300px);overflow:auto}
+#v-dia{left:24px;top:92px;width:430px;border-radius:30px 24px 34px 22px/24px 32px 22px 30px}
+#v-ok{right:24px;top:92px;width:350px;border-radius:32px 22px 30px 26px/22px 34px 24px 32px}
+#v-actividad{left:50%;top:404px;width:460px;margin-left:-230px;border-radius:24px 32px 22px 34px/30px 22px 32px 24px}
+#v-actividad .cuerpo{max-height:calc(100vh - 570px);min-height:120px}
+#v-ok .cuerpo{max-height:calc(100vh - 250px)}
+#v-sabrina{right:24px;top:480px;width:350px;border-radius:26px 30px 24px 32px/32px 24px 30px 22px}
+#v-pendiente{left:50%;top:404px;width:460px;margin-left:-230px;border-radius:34px 26px 30px 24px/24px 30px 26px 34px}
+
+.pista{display:flex;align-items:center;gap:10px;padding:4px 6px 4px 10px;border-radius:22px;background:var(--pozo);border:1px solid transparent}
+.pista.activa{border-color:var(--ok)}
+.pista .num{font:700 15px Doto,monospace;color:var(--ink2);width:22px;flex:none}
+.pista .texto{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.pista .titulo{font-weight:500;line-height:1.2;overflow-wrap:anywhere}
+.pista.hecha .titulo{text-decoration:line-through;color:var(--ink2)}
+.pista .tiempo{font:900 17px Doto,monospace;min-width:58px;text-align:right;flex:none}
+.ondas{display:inline-flex;align-items:center;gap:2px;height:18px;flex:none}
+.ondas i{width:3px;height:18px;border-radius:2px;background:var(--ok);animation:onda .9s ease-in-out infinite}
+.ondas i:nth-child(2){animation-delay:.15s}.ondas i:nth-child(3){animation-delay:.3s}.ondas i:nth-child(4){animation-delay:.45s}
+.toca{background:var(--pozo);border:0}
+.pista.activa .toca{background:var(--pri);color:var(--priInk)}
+.pie{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 6px 0}
+.pie .puntos{font-size:20px}
+.pie .otros{color:var(--warn)}
+.alta{display:flex;gap:6px;padding-top:8px}
+.alta input,.alta select{height:44px;border-radius:22px;border:1px solid var(--line);background:var(--pozo);color:inherit;font:500 13px 'Space Grotesk',sans-serif;padding:0 14px;min-width:0}
+.alta input{flex:1 1 auto}
+.alta select{flex:none;max-width:120px}
+
+.tarjeta{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:20px;background:var(--pozo)}
+.tarjeta .fila{display:flex;justify-content:space-between;gap:8px}
+.tarjeta .titulo{font-weight:500;overflow-wrap:anywhere}
+.recibo{margin:0;padding:8px 10px;border-radius:14px;background:var(--pozo);border:1px solid var(--line);font:13px/1.4 'Space Grotesk',sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto}
+.dos{display:flex;gap:8px}
+.dos .boton{flex:1 1 0;font-size:14px}
+.renglon{display:flex;gap:10px;padding:6px 10px;border-radius:16px;background:var(--pozo);align-items:baseline}
+.renglon .hora{font:700 13px Doto,monospace;color:var(--ink2);flex:none;width:46px}
+.renglon .que{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.vacio{padding:10px 12px;border-radius:16px;border:1px dashed var(--line);color:var(--ink2);font-size:13px}
+.mas{align-self:flex-start;height:36px;font-size:12px}
+.dato{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border-radius:16px;background:var(--pozo)}
+.dato b{font-weight:500}
+
+/* ── Barra de ventanas ── */
+.muelle{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px;border-radius:32px;background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:var(--sombra);z-index:40;max-width:calc(100vw - 24px);overflow-x:auto}
+.muelle .boton{border:0;font-size:14px}
+.muelle .boton[aria-pressed="true"]{background:var(--pozo)}
+.nota{position:absolute;left:24px;bottom:26px;margin:0;max-width:300px;font-size:11.5px;color:var(--ink2);z-index:2}
+.demo{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:60;padding:4px 14px;border-radius:14px;background:var(--sig);color:var(--sigInk);font-weight:600;font-size:12px;white-space:nowrap}
+.brinda{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:70;padding:10px 18px;border-radius:22px;background:var(--pri);color:var(--priInk);font-weight:500;max-width:calc(100vw - 32px);box-shadow:var(--sombra)}
+
+/* ── Entrada ── */
+.entrada{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px}
+.entrada .caja{width:min(420px,100%);padding:28px 26px;text-align:center;background:var(--glass);border:1px solid var(--edge);border-radius:34px 26px 30px 24px/24px 30px 26px 34px;backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:var(--sombra);display:flex;flex-direction:column;gap:14px;align-items:center}
+.entrada .marca{font-size:84px}
+
+/* ── Pantallas angostas: las ventanas se apilan ── */
+@media (max-width:900px){
+  .onda{overflow:visible;padding:96px 12px 110px}
+  .barra{left:12px;right:12px;top:10px}
+  .marca{font-size:40px}
+  .reloj .puntos{font-size:24px}
+  .reloj .tenue,.barra .solo-ancho{display:none}
+  .orbe{position:relative;left:auto;top:auto;transform:none;margin:0 auto;width:220px;height:190px}
+  .orbe .puntos{font-size:64px}
+  .aviso{position:relative;left:auto;top:auto;transform:none;margin:10px auto;max-width:100%}
+  .ventana{position:relative!important;left:auto!important;right:auto!important;top:auto!important;width:auto!important;margin:12px 0 0!important;transform:none!important}
+  .cuerpo{max-height:none}
+  .muelle{position:fixed;bottom:12px}
+  .nota{position:static;margin:14px 4px 0;max-width:none}
+  .trazos{display:none}
+  .demo{position:fixed;top:auto;bottom:78px}
+  .pista{flex-wrap:wrap;padding:8px 8px 6px 10px}
+  .pista .texto{flex:1 1 calc(100% - 40px)}
+  .pista .tiempo{margin-left:auto}
+}
+@media (max-width:520px){
+  .barra{gap:8px}
+  .barra .lado{gap:6px}
+  #estado-txt{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app" class="onda">
+  <div class="fondo" aria-hidden="true">
+  <div class="mancha a"></div>
+  <div class="mancha b"></div>
+  <div class="mancha c"></div>
+  <svg class="trazos" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke="var(--trazo)" stroke-linecap="round">
+      <path d="M-20 640C180 520 300 700 470 560S760 300 930 420s260 220 540 40" stroke-width="1.1"></path>
+      <path d="M-20 668C190 548 310 722 480 590S770 330 940 448s250 214 520 46" stroke-width=".7" stroke-dasharray="3 9"></path>
+      <path d="M380 -20C420 120 300 220 420 330s310 20 380 150-60 300 40 460" stroke-width=".8"></path>
+      <path d="M1180 -20c-60 140 80 200 20 330s-220 90-200 250 220 140 240 360" stroke-width=".7" stroke-dasharray="14 8"></path>
+      <path d="M96 418h16m-8-8v16M1326 96h16m-8-8v16M706 786h16m-8-8v16M1052 372h12m-6-6v12" stroke-width="1"></path>
+      <circle cx="1238" cy="704" r="46" stroke-width=".7"></circle>
+      <circle cx="1238" cy="704" r="70" stroke-width=".5" stroke-dasharray="2 7"></circle>
+    </g>
+    <text x="888" y="196" fill="var(--trazo)" style="font-family:'Reenie Beanie',cursive;font-size:30px" transform="rotate(-5 888 196)">señal, no ruido</text>
+  </svg>
+  </div>
+
+  <div id="demo" class="demo" hidden>DEMO · datos de ejemplo · nada se guarda</div>
+
+  <header class="barra">
+    <div class="lado" style="align-items:baseline;gap:14px">
+      <span class="marca mano">sabrina</span>
+      <span class="estado"><span id="foco" class="foco" aria-hidden="true"></span><span id="estado-txt">cargando</span></span>
+    </div>
+    <div class="lado">
+      <div class="reloj">
+        <span id="hora" class="puntos">--:--</span>
+        <span id="fecha" class="tenue"></span>
+      </div>
+      <button id="b-tema" type="button" class="boton cristal redondo" aria-label="Cambiar a noche">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+      </button>
+      <button id="b-sonido" type="button" class="boton cristal solo-ancho" aria-pressed="false">Sonido: no</button>
+      <button id="b-modo" type="button" class="boton" hidden>Apagar</button>
+      <button id="b-salir" type="button" class="boton liso solo-ancho" hidden>Salir</button>
+    </div>
+  </header>
+
+  <div class="orbe">
+    <div class="masa" aria-hidden="true"></div>
+    <div class="aro" aria-hidden="true"></div>
+    <div class="aro2" aria-hidden="true"></div>
+    <button id="b-orbe" type="button" aria-label="Abrir las aprobaciones">
+      <span id="n-pend" class="puntos">0</span>
+      <span style="font-size:14px;font-weight:500">esperan tu OK</span>
+    </button>
+  </div>
+
+  <div id="aviso" class="aviso" role="status" hidden>
+    <span class="foco" aria-hidden="true"></span>
+    <span id="aviso-txt" style="font-weight:500"></span>
+  </div>
+
+  <section id="v-dia" class="ventana" aria-label="Tu día" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana Tu día"><h2>tu día</h2><span id="dia-sub" class="tenue"></span></button>
+      <button type="button" class="cierra" aria-label="Cerrar Tu día">×</button>
+    </div>
+    <div id="dia-lista" class="cuerpo"></div>
+    <form id="dia-alta" class="alta" autocomplete="off">
+      <input id="dia-titulo" type="text" maxlength="200" placeholder="Nueva actividad" aria-label="Nueva actividad">
+      <select id="dia-tipo" aria-label="Tipo de actividad">
+        <option value="ingresos">Ingresos</option>
+        <option value="urgente">Urgente</option>
+        <option value="backoffice">Backoffice</option>
+      </select>
+      <button type="submit" class="boton fuerte redondo" aria-label="Agregar actividad">+</button>
+    </form>
+    <div class="pie">
+      <span class="tenue">en foco hoy</span><span id="t-foco" class="puntos">0:00</span>
+      <button id="b-otros" type="button" class="boton" style="height:36px">Otros</button>
+      <span id="t-otros" class="puntos otros">0:00</span>
+    </div>
+  </section>
+
+  <section id="v-ok" class="ventana" aria-label="Esperan tu OK" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana Esperan tu OK"><h2>esperan tu ok</h2><span id="ok-sub" class="tenue"></span></button>
+      <button type="button" class="cierra" aria-label="Cerrar Esperan tu OK">×</button>
+    </div>
+    <div id="ok-lista" class="cuerpo"></div>
+  </section>
+
+  <section id="v-actividad" class="ventana" aria-label="Actividad" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana Actividad"><h2>actividad</h2><span class="tenue">bitácora y WhatsApp</span></button>
+      <button type="button" class="cierra" aria-label="Cerrar Actividad">×</button>
+    </div>
+    <div id="act-lista" class="cuerpo"></div>
+  </section>
+
+  <section id="v-sabrina" class="ventana" aria-label="Sabrina" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana Sabrina"><h2>sabrina</h2><span class="tenue">cómo está</span></button>
+      <button type="button" class="cierra" aria-label="Cerrar Sabrina">×</button>
+    </div>
+    <div id="sab-lista" class="cuerpo"></div>
+  </section>
+
+  <section id="v-pendiente" class="ventana" aria-label="Sin conectar" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana"><h2 id="pen-titulo">sin conectar</h2><span class="tenue">todavía</span></button>
+      <button type="button" class="cierra" aria-label="Cerrar">×</button>
+    </div>
+    <div id="pen-lista" class="cuerpo"></div>
+  </section>
+
+  <nav id="muelle" class="muelle" aria-label="Ventanas" hidden>
+    <button type="button" class="boton" data-abre="dia">Tu día</button>
+    <button type="button" class="boton" data-abre="ok">Aprobaciones</button>
+    <button type="button" class="boton" data-abre="actividad">Actividad</button>
+    <button type="button" class="boton" data-abre="sabrina">Sabrina</button>
+    <button type="button" class="boton" data-pendiente="correos">Correos</button>
+    <button type="button" class="boton" data-pendiente="ventas">Ventas</button>
+    <button type="button" class="boton" data-pendiente="agentes">Agentes</button>
+  </nav>
+
+  <p id="nota" class="nota" hidden></p>
+
+  <div id="entrada" class="entrada" hidden>
+    <div class="caja">
+      <span class="marca mano">sabrina</span>
+      <p id="entrada-txt" style="margin:0">Tu pantalla de todo el día.</p>
+      <button id="b-entrar" type="button" class="boton fuerte" style="font-size:15px;padding:0 22px">Entrar con Google</button>
+      <button id="b-otra" type="button" class="boton" hidden>Usar otra cuenta</button>
+      <span class="tenue">Solo entra el dueño. Nadie más ve nada.</span>
+    </div>
+  </div>
+
+  <div id="brinda" class="brinda" role="alert" hidden></div>
+</div>
+
+<script>
+"use strict";
+(() => {
+  // ── Configuración. La llave publicable es pública por diseño: sin sesión del
+  //    dueño no lee ni escribe nada. ──────────────────────────────────────────
+  const CONFIG = {
+    url: "https://stuwouemwhaiafdmjxai.supabase.co",
+    llave: "sb_publishable_OGRAy2Y3NKna69fkXZOu3Q_a6_ijp31",
+    libreria: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js",
+    huella: "sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK",
+    zona: "America/Vancouver",
+    cada: 20000,
+  };
+  const DEMO = new URLSearchParams(location.search).has("demo");
+  const $ = (id) => document.getElementById(id);
+  const app = $("app");
+
+  // ── Utilidades ────────────────────────────────────────────────────────────
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const guardar = (k, v) => { try { localStorage.setItem("sabrina." + k, JSON.stringify(v)); } catch { /* sin almacenamiento */ } };
+  const leer = (k, def) => { try { const v = localStorage.getItem("sabrina." + k); return v === null ? def : JSON.parse(v); } catch { return def; } };
+
+  function hoyEn(zona, fecha = new Date()) {
+    const p = new Intl.DateTimeFormat("en-CA", { timeZone: zona, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(fecha);
+    const g = (t) => p.find((x) => x.type === t).value;
+    return `${g("year")}-${g("month")}-${g("day")}`;
+  }
+  function horaEn(zona, fecha = new Date()) {
+    return new Intl.DateTimeFormat("es-MX", { timeZone: zona, hour: "2-digit", minute: "2-digit", hour12: false }).format(fecha);
+  }
+  function duracion(seg) {
+    seg = Math.max(0, Math.floor(seg));
+    const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60;
+    const dd = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${h}:${dd(m)}:${dd(s)}` : `${m}:${dd(s)}`;
+  }
+  function hace(iso, ahora = Date.now()) {
+    const seg = Math.max(0, Math.floor((ahora - new Date(iso).getTime()) / 1000));
+    if (seg < 60) return "hace un momento";
+    if (seg < 3600) return `hace ${Math.floor(seg / 60)} min`;
+    if (seg < 86400) return `hace ${Math.floor(seg / 3600)} h`;
+    return `hace ${Math.floor(seg / 86400)} d`;
+  }
+  const TIPOS = { urgente: "Urgente", ingresos: "Ingresos", backoffice: "Backoffice", otros: "Otros" };
+  const EVENTOS = {
+    wa_mensaje_recibido: "Llegó un mensaje tuyo por WhatsApp",
+    wa_envio_fallido: "No se pudo contestar por WhatsApp",
+    aprobacion_aprobada: "Aprobaste",
+    aprobacion_rechazada: "Rechazaste",
+    aprobacion_expirada: "Venció una aprobación sin decidir",
+    apagado: "Apagaste a Sabrina",
+    encendido: "Encendiste a Sabrina",
+  };
+  const ESTADOS = { aprobada: "Aprobada. La ejecuta la Puerta.", rechazada: "Rechazada.", expirada: "Venció sin decidir.", ejecutada: "Hecha.", fallida: "Falló al ejecutarse." };
+
+  // ── Fuente de datos real (Supabase) ───────────────────────────────────────
+  function fuenteReal() {
+    let cliente = null;
+    const cargarLibreria = () => new Promise((ok, mal) => {
+      if (window.supabase) return ok();
+      const s = document.createElement("script");
+      s.src = CONFIG.libreria; s.integrity = CONFIG.huella; s.crossOrigin = "anonymous";
+      s.onload = ok; s.onerror = () => mal(new Error("No se pudo cargar la librería de datos"));
+      document.head.appendChild(s);
+    });
+    const c = async () => {
+      if (!cliente) { await cargarLibreria(); cliente = window.supabase.createClient(CONFIG.url, CONFIG.llave); }
+      return cliente;
+    };
+    const pide = async (promesa) => { const { data, error } = await promesa; if (error) throw new Error(error.message || "Falla de datos"); return data; };
+    return {
+      async sesion() {
+        const sb = await c();
+        const { data } = await sb.auth.getSession();
+        if (!data || !data.session) return null;
+        const dueno = await pide(sb.rpc("es_dueno"));
+        return { correo: data.session.user.email || "", dueno: dueno === true };
+      },
+      async entrar() {
+        const sb = await c();
+        const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
+        if (error) throw new Error(error.message);
+      },
+      async salir() { const sb = await c(); await sb.auth.signOut(); },
+      async cargar() {
+        const sb = await c();
+        const dia = hoyEn(CONFIG.zona);
+        const [config, actividades, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos] = await Promise.all([
+          pide(sb.from("config").select("clave,valor")),
+          pide(sb.from("actividades").select("id,dia,titulo,tipo,origen,orden,estado").eq("dia", dia).neq("estado", "archivada").order("orden").order("id")),
+          pide(sb.from("tiempos").select("id,actividad_id,inicio,actividades(titulo,dia)").is("fin", null)),
+          pide(sb.from("aprobaciones").select("id,creada_en,tipo,titulo,recibo,origen,estado,expira_en,decidida_en").order("creada_en", { ascending: false }).limit(20)),
+          pide(sb.from("bitacora").select("id,en,actor,canal,evento,detalle").order("en", { ascending: false }).limit(15)),
+          pide(sb.from("wa_mensajes").select("id,direccion,tipo,texto,creado_en").order("creado_en", { ascending: false }).limit(10)),
+          pide(sb.from("latidos").select("componente,ultimo_en")),
+          pide(sb.from("wa_desconocidos").select("wa_id,intentos")),
+        ]);
+        const ids = actividades.map((a) => a.id);
+        const tiempos = ids.length ? await pide(sb.from("tiempos").select("id,actividad_id,inicio,fin,segundos").in("actividad_id", ids)) : [];
+        const modo = (config.find((x) => x.clave === "modo") || {}).valor;
+        return { modo: modo === "on" ? "on" : "off", actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos };
+      },
+      async agregar(titulo, tipo, orden) { const sb = await c(); await pide(sb.from("actividades").insert({ titulo, tipo, orden })); },
+      async iniciar(id) { const sb = await c(); await pide(sb.rpc("iniciar_cronometro", { p_actividad_id: id })); },
+      async pausar() { const sb = await c(); await pide(sb.rpc("pausar_cronometro")); },
+      async otros() { const sb = await c(); await pide(sb.rpc("iniciar_otros")); },
+      async cerrar(id) { const sb = await c(); await pide(sb.rpc("cerrar_actividad", { p_actividad_id: id, p_estado: "hecha" })); },
+      async decidir(id, decision) { const sb = await c(); await pide(sb.rpc("decidir_aprobacion", { p_id: id, p_decision: decision })); },
+      async modo(m) { const sb = await c(); await pide(sb.rpc("cambiar_modo", { p_modo: m })); },
+    };
+  }
+
+  // ── Fuente de ejemplo (?demo): mismas reglas, en memoria ──────────────────
+  function fuenteDemo() {
+    const t0 = Date.now(), min = 60000;
+    let sig = 100;
+    const dia = hoyEn(CONFIG.zona);
+    const m = {
+      modo: "on",
+      actividades: [
+        { id: 1, dia, titulo: "Cotizar carro de 2x12 #3 (ejemplo)", tipo: "ingresos", origen: "manual", orden: 1, estado: "pendiente" },
+        { id: 2, dia, titulo: "Llamar al prospecto del paso 2 (ejemplo)", tipo: "ingresos", origen: "cuenta", orden: 2, estado: "pendiente" },
+        { id: 3, dia, titulo: "Embarque con ETA vencida (ejemplo)", tipo: "urgente", origen: "alerta", orden: 3, estado: "pendiente" },
+        { id: 4, dia, titulo: "Conciliar anticipos (ejemplo)", tipo: "backoffice", origen: "manual", orden: 4, estado: "hecha" },
+      ],
+      tiempos: [
+        { id: 1, actividad_id: 4, inicio: new Date(t0 - 95 * min).toISOString(), fin: new Date(t0 - 70 * min).toISOString(), segundos: 1500 },
+        { id: 2, actividad_id: 1, inicio: new Date(t0 - 38 * min).toISOString(), fin: new Date(t0 - 12 * min).toISOString(), segundos: 1560 },
+        { id: 3, actividad_id: 3, inicio: new Date(t0 - 4 * min - 12000).toISOString(), fin: null, segundos: null },
+      ],
+      aprobaciones: [
+        { id: 1, creada_en: new Date(t0 - 9 * min).toISOString(), tipo: "correo_enviar", titulo: "Responder a un cliente (ejemplo)", recibo: "Para: cliente de ejemplo\nAsunto: Re: disponibilidad de 2x6 #3\n\nTexto que se enviará, tal cual lo armó el sistema.", origen: "ejemplo", estado: "pendiente", expira_en: new Date(t0 + 300 * min).toISOString(), decidida_en: null },
+        { id: 2, creada_en: new Date(t0 - 40 * min).toISOString(), tipo: "netsuite_actividad", titulo: "Registrar una llamada en NetSuite (ejemplo)", recibo: "Cuenta: prospecto de ejemplo\nActividad: llamada de seguimiento\nFecha: hoy", origen: "ejemplo", estado: "pendiente", expira_en: new Date(t0 + 200 * min).toISOString(), decidida_en: null },
+      ],
+      bitacora: [
+        { id: 2, en: new Date(t0 - 6 * min).toISOString(), actor: "puerta", canal: "whatsapp", evento: "wa_mensaje_recibido", detalle: {} },
+        { id: 1, en: new Date(t0 - 50 * min).toISOString(), actor: "jorge", canal: "pantalla", evento: "encendido", detalle: {} },
+      ],
+      mensajes: [
+        { id: 2, direccion: "saliente", tipo: "text", texto: "Recibido. Todavía no tengo cerebro conectado; por ahora solo guardo tu mensaje.", creado_en: new Date(t0 - 6 * min + 2000).toISOString() },
+        { id: 1, direccion: "entrante", tipo: "text", texto: "¿Qué tengo hoy? (ejemplo)", creado_en: new Date(t0 - 6 * min).toISOString() },
+      ],
+      latidos: [{ componente: "puerta", ultimo_en: new Date(t0 - 6 * min).toISOString() }],
+      desconocidos: [],
+    };
+    const parar = () => m.tiempos.forEach((t) => { if (!t.fin) { t.fin = new Date().toISOString(); t.segundos = Math.floor((Date.parse(t.fin) - Date.parse(t.inicio)) / 1000); } });
+    const anota = (actor, evento, detalle = {}) => m.bitacora.unshift({ id: sig++, en: new Date().toISOString(), actor, canal: "pantalla", evento, detalle });
+    const arranca = (id) => {
+      const a = m.actividades.find((x) => x.id === id);
+      if (!a || a.estado !== "pendiente") throw new Error("Esa actividad no existe o ya está cerrada");
+      parar(); m.tiempos.push({ id: sig++, actividad_id: id, inicio: new Date().toISOString(), fin: null, segundos: null });
+    };
+    return {
+      async sesion() { return { correo: "demo", dueno: true }; },
+      async entrar() {}, async salir() {},
+      async cargar() {
+        const corriendo = m.tiempos.filter((t) => !t.fin).map((t) => ({ id: t.id, actividad_id: t.actividad_id, inicio: t.inicio, actividades: m.actividades.find((a) => a.id === t.actividad_id) }));
+        return JSON.parse(JSON.stringify({ ...m, actividades: m.actividades.filter((a) => a.estado !== "archivada"), corriendo }));
+      },
+      async agregar(titulo, tipo, orden) { m.actividades.push({ id: sig++, dia, titulo, tipo, origen: "manual", orden, estado: "pendiente" }); },
+      async iniciar(id) { arranca(id); },
+      async pausar() { parar(); },
+      async otros() {
+        let o = m.actividades.find((a) => a.tipo === "otros");
+        if (!o) { o = { id: sig++, dia, titulo: "Otros", tipo: "otros", origen: "manual", orden: 9999, estado: "pendiente" }; m.actividades.push(o); }
+        o.estado = "pendiente"; arranca(o.id);
+      },
+      async cerrar(id) { const a = m.actividades.find((x) => x.id === id); if (!a) throw new Error("Esa actividad no existe"); m.tiempos.forEach((t) => { if (!t.fin && t.actividad_id === id) { t.fin = new Date().toISOString(); t.segundos = Math.floor((Date.parse(t.fin) - Date.parse(t.inicio)) / 1000); } }); a.estado = "hecha"; },
+      async decidir(id, decision) {
+        const a = m.aprobaciones.find((x) => x.id === id);
+        if (!a || a.estado !== "pendiente") throw new Error("Esa aprobación ya no está pendiente");
+        a.estado = decision === "aprobar" ? "aprobada" : "rechazada"; a.decidida_en = new Date().toISOString();
+        anota("jorge", decision === "aprobar" ? "aprobacion_aprobada" : "aprobacion_rechazada", { titulo: a.titulo });
+      },
+      async modo(x) { m.modo = x; anota("jorge", x === "off" ? "apagado" : "encendido"); },
+    };
+  }
+
+  const fuente = DEMO ? fuenteDemo() : fuenteReal();
+
+  // ── Estado de la pantalla ─────────────────────────────────────────────────
+  let datos = null;
+  let sesion = null;
+  let ocupado = false;
+  const verTodo = { dia: false, ok: false, act: false };
+  const TOPE = 5;
+
+  // ── Sonido: sintetizado, sin fragmentos de canciones ──────────────────────
+  let audio = null;
+  let conSonido = leer("sonido", false);
+  const NOTAS = { inicia: [392, 587], pausa: [587, 392], hecho: [523, 659, 784], si: [440, 660], no: [330, 247], alerta: [880, 660, 880], abre: [494] };
+  function suena(cual) {
+    if (!conSonido) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const notas = NOTAS[cual] || NOTAS.abre;
+      notas.forEach((f, i) => {
+        const t = audio.currentTime + i * 0.09;
+        const o = audio.createOscillator(), filtro = audio.createBiquadFilter(), g = audio.createGain();
+        o.type = "sawtooth"; o.frequency.setValueAtTime(f, t);
+        filtro.type = "lowpass"; filtro.frequency.setValueAtTime(1800, t);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        o.connect(filtro); filtro.connect(g); g.connect(audio.destination);
+        o.start(t); o.stop(t + 0.18);
+      });
+    } catch { /* sin audio */ }
+  }
+
+  // ── Avisos breves ─────────────────────────────────────────────────────────
+  let relojBrinda = 0;
+  function brinda(texto) {
+    const b = $("brinda"); b.textContent = texto; b.hidden = false;
+    clearTimeout(relojBrinda); relojBrinda = setTimeout(() => { b.hidden = true; }, 5000);
+  }
+
+  // ── Ventanas: mover, cerrar, traer al frente, recordar posición ───────────
+  const VENTANAS = ["dia", "ok", "actividad", "sabrina", "pendiente"];
+  const abiertas = Object.assign({ dia: true, ok: true, actividad: true, sabrina: false, pendiente: false }, leer("abiertas", {}));
+  abiertas.pendiente = false;
+  const lugar = leer("lugar", {});
+  let cima = 10;
+  function alFrente(nombre) { $("v-" + nombre).style.zIndex = String(++cima); }
+  function pintaVentanas() {
+    for (const n of VENTANAS) {
+      const v = $("v-" + n);
+      v.hidden = !abiertas[n];
+      const p = lugar[n] || { x: 0, y: 0 };
+      v.style.transform = `translate(${p.x}px,${p.y}px)`;
+    }
+    document.querySelectorAll("[data-abre]").forEach((b) => b.setAttribute("aria-pressed", String(!!abiertas[b.dataset.abre])));
+    guardar("abiertas", abiertas);
+  }
+  function abre(nombre, alternar = true) {
+    abiertas[nombre] = alternar ? !abiertas[nombre] : true;
+    if (abiertas[nombre]) { alFrente(nombre); suena("abre"); }
+    pintaVentanas();
+  }
+  for (const n of VENTANAS) {
+    const v = $("v-" + n), asa = v.querySelector(".asa");
+    let inicio = null;
+    asa.addEventListener("pointerdown", (e) => {
+      const p = lugar[n] || { x: 0, y: 0 };
+      inicio = { x: e.clientX - p.x, y: e.clientY - p.y };
+      asa.setPointerCapture(e.pointerId); alFrente(n);
+    });
+    asa.addEventListener("pointermove", (e) => {
+      if (!inicio) return;
+      lugar[n] = { x: Math.round(e.clientX - inicio.x), y: Math.round(e.clientY - inicio.y) };
+      v.style.transform = `translate(${lugar[n].x}px,${lugar[n].y}px)`;
+    });
+    const suelta = () => { if (inicio) { inicio = null; guardar("lugar", lugar); } };
+    asa.addEventListener("pointerup", suelta); asa.addEventListener("pointercancel", suelta);
+    v.addEventListener("pointerdown", () => alFrente(n));
+    v.querySelector(".cierra").addEventListener("click", () => { abiertas[n] = false; pintaVentanas(); });
+  }
+  document.querySelectorAll("[data-abre]").forEach((b) => b.addEventListener("click", () => abre(b.dataset.abre)));
+
+  const PENDIENTES = {
+    correos: { titulo: "correos", texto: "Tus correos por responder y tu agenda.", falta: "Falta la credencial de Google para leer tu Gmail y tu Calendar." },
+    ventas: { titulo: "ventas", texto: "Una cuenta a la vez, con su ficha y su historial.", falta: "Falta el acceso de solo lectura a NetSuite y a tu CRM." },
+    agentes: { titulo: "agentes", texto: "Qué hace cada agente y qué te pide.", falta: "Falta conectar el cerebro de Sabrina." },
+  };
+  document.querySelectorAll("[data-pendiente]").forEach((b) => b.addEventListener("click", () => {
+    const p = PENDIENTES[b.dataset.pendiente];
+    $("pen-titulo").textContent = p.titulo;
+    $("pen-lista").innerHTML = `<div class="tarjeta"><span>${esc(p.texto)}</span></div><div class="vacio">Sin conectar todavía. ${esc(p.falta)}</div>`;
+    abre("pendiente", false);
+  }));
+
+  // ── Tema ──────────────────────────────────────────────────────────────────
+  function esNochePorHora() { const h = Number(horaEn(CONFIG.zona).slice(0, 2)); return h >= 19 || h < 7; }
+  let noche = leer("noche", null);
+  function pintaTema() {
+    const n = noche === null ? esNochePorHora() : noche;
+    app.classList.toggle("noche", n);
+    document.body.style.background = n ? "#070C13" : "#EDF2F4";
+    $("b-tema").setAttribute("aria-label", n ? "Cambiar a día" : "Cambiar a noche");
+  }
+  $("b-tema").addEventListener("click", () => { noche = !app.classList.contains("noche"); guardar("noche", noche); pintaTema(); });
+  function pintaSonido() { const b = $("b-sonido"); b.textContent = conSonido ? "Sonido: sí" : "Sonido: no"; b.setAttribute("aria-pressed", String(conSonido)); }
+  $("b-sonido").addEventListener("click", () => { conSonido = !conSonido; guardar("sonido", conSonido); pintaSonido(); suena("abre"); });
+
+  // ── Cálculo de tiempos ────────────────────────────────────────────────────
+  function segundosDe(actividadId, ahora) {
+    let total = 0;
+    for (const t of datos.tiempos) {
+      if (t.actividad_id !== actividadId) continue;
+      total += t.fin ? (t.segundos ?? 0) : Math.max(0, (ahora - Date.parse(t.inicio)) / 1000);
+    }
+    return total;
+  }
+  const activaId = () => { const t = datos.tiempos.find((x) => !x.fin); return t ? t.actividad_id : null; };
+
+  // ── Pintado ───────────────────────────────────────────────────────────────
+  const ICONO = {
+    pausa: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="3.6" height="12" rx="1.2"></rect><rect x="8.4" y="1" width="3.6" height="12" rx="1.2"></rect></svg>',
+    sigue: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.4v11.2a.8.8 0 0 0 1.2.7l9-5.6a.8.8 0 0 0 0-1.4l-9-5.6A.8.8 0 0 0 3 1.4z"></path></svg>',
+    palomita: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 4.8"></path></svg>',
+  };
+  const recorta = (lista, clave) => (verTodo[clave] ? lista : lista.slice(0, TOPE));
+  const botonMas = (lista, clave) => lista.length > TOPE ? `<button type="button" class="boton mas" data-mas="${clave}">${verTodo[clave] ? "Ver menos" : `Ver ${lista.length - TOPE} más`}</button>` : "";
+
+  function pintaDia() {
+    const ahora = Date.now(), activa = activaId();
+    const lista = datos.actividades.filter((a) => a.tipo !== "otros");
+    const orden = [...lista].sort((a, b) => (a.estado === "hecha") - (b.estado === "hecha") || a.orden - b.orden || a.id - b.id);
+    $("dia-sub").textContent = lista.length ? `${lista.filter((a) => a.estado === "pendiente").length} por hacer` : "";
+    const filas = recorta(orden, "dia").map((a, i) => {
+      const esActiva = a.id === activa, hecha = a.estado === "hecha";
+      return `<div class="pista${esActiva ? " activa" : ""}${hecha ? " hecha" : ""}">
+        <span class="num">${String(i + 1).padStart(2, "0")}</span>
+        <div class="texto"><span class="titulo">${esc(a.titulo)}</span><span class="tenue">${esc(TIPOS[a.tipo] || a.tipo)}</span></div>
+        ${esActiva ? '<span class="ondas" aria-hidden="true"><i></i><i></i><i></i><i></i></span>' : ""}
+        <span class="tiempo" data-tiempo="${a.id}">${duracion(segundosDe(a.id, ahora))}</span>
+        ${hecha ? "" : `<button type="button" class="boton redondo toca" data-toca="${a.id}" aria-label="${esActiva ? "Pausar" : "Iniciar"}: ${esc(a.titulo)}">${esActiva ? ICONO.pausa : ICONO.sigue}</button>
+        <button type="button" class="boton redondo liso" data-hecha="${a.id}" aria-label="Marcar hecha: ${esc(a.titulo)}">${ICONO.palomita}</button>`}
+      </div>`;
+    });
+    $("dia-lista").innerHTML = (filas.join("") || '<div class="vacio">Tu día está vacío. Agrega la primera actividad.</div>') + botonMas(orden, "dia");
+    const otros = datos.actividades.find((a) => a.tipo === "otros");
+    const b = $("b-otros");
+    b.textContent = otros && otros.id === activa ? "Pausar otros" : "Otros";
+    b.classList.toggle("fuerte", !!(otros && otros.id === activa));
+    pintaTotales();
+  }
+  function pintaTotales() {
+    if (!datos) return;
+    const ahora = Date.now();
+    let foco = 0, otros = 0;
+    for (const a of datos.actividades) { const s = segundosDe(a.id, ahora); if (a.tipo === "otros") otros += s; else foco += s; }
+    $("t-foco").textContent = duracion(foco); $("t-otros").textContent = duracion(otros);
+    const activa = activaId();
+    if (activa !== null) { const nodo = document.querySelector(`[data-tiempo="${activa}"]`); if (nodo) nodo.textContent = duracion(segundosDe(activa, ahora)); }
+  }
+
+  function pintaOk() {
+    const pend = datos.aprobaciones.filter((a) => a.estado === "pendiente");
+    const hechas = datos.aprobaciones.filter((a) => a.estado !== "pendiente").slice(0, 3);
+    $("n-pend").textContent = String(pend.length);
+    $("ok-sub").textContent = pend.length ? `${pend.length} pendiente${pend.length === 1 ? "" : "s"}` : "";
+    const tarjetas = recorta(pend, "ok").map((a) => `<div class="tarjeta">
+        <div class="fila"><span class="titulo">${esc(a.titulo)}</span><span class="tenue" style="white-space:nowrap">${esc(hace(a.creada_en))}</span></div>
+        <pre class="recibo">${esc(a.recibo)}</pre>
+        <span class="tenue">Vence ${esc(horaEn(CONFIG.zona, new Date(a.expira_en)))} · propuso: ${esc(a.origen)}</span>
+        <div class="dos">
+          <button type="button" class="boton fuerte" data-decide="aprobar" data-id="${a.id}">Aprobar</button>
+          <button type="button" class="boton" data-decide="rechazar" data-id="${a.id}">Rechazar</button>
+        </div>
+      </div>`);
+    const resueltas = hechas.map((a) => `<div class="tarjeta"><div class="fila"><span class="titulo">${esc(a.titulo)}</span></div><span class="tenue" style="font-size:13px">${esc(ESTADOS[a.estado] || a.estado)}</span></div>`);
+    $("ok-lista").innerHTML = (tarjetas.join("") || '<div class="vacio">Nada espera tu OK.</div>') + botonMas(pend, "ok") + resueltas.join("");
+  }
+
+  function pintaActividad() {
+    const renglones = [
+      ...datos.bitacora.map((b) => ({ en: b.en, que: (EVENTOS[b.evento] || b.evento) + (b.detalle && b.detalle.titulo ? `: ${b.detalle.titulo}` : "") })),
+      ...datos.mensajes.map((m) => ({ en: m.creado_en, que: (m.direccion === "entrante" ? "Tú: " : "Sabrina: ") + (m.texto || `[${m.tipo}]`) })),
+    ].sort((a, b) => Date.parse(b.en) - Date.parse(a.en));
+    const filas = recorta(renglones, "act").map((r) => `<div class="renglon"><span class="hora">${esc(horaEn(CONFIG.zona, new Date(r.en)))}</span><span class="que">${esc(r.que)}</span></div>`);
+    $("act-lista").innerHTML = (filas.join("") || '<div class="vacio">Todavía no hay movimientos.</div>') + botonMas(renglones, "act");
+  }
+
+  function pintaSabrina() {
+    const puerta = datos.latidos.find((l) => l.componente === "puerta");
+    const extranos = datos.desconocidos.reduce((s, d) => s + (d.intentos || 0), 0);
+    $("sab-lista").innerHTML = `
+      <div class="dato"><span>Estado</span><b>${datos.modo === "on" ? "Encendida" : "Apagada"}</b></div>
+      <div class="dato"><span>La Puerta</span><b>${puerta ? esc("Latió " + hace(puerta.ultimo_en)) : "Aún no recibe avisos de Meta"}</b></div>
+      <div class="dato"><span>Números desconocidos</span><b>${datos.desconocidos.length ? `${datos.desconocidos.length} · ${extranos} intentos` : "Ninguno"}</b></div>
+      <div class="vacio">Sin conectar todavía: correos y agenda, ventas, cerebro.</div>`;
+  }
+
+  function pintaCabeza() {
+    const encendida = datos.modo === "on";
+    $("foco").classList.toggle("alerta", !encendida);
+    $("estado-txt").textContent = encendida ? "en línea" : "apagada";
+    const b = $("b-modo"); b.hidden = false; b.textContent = encendida ? "Apagar" : "Encender"; b.classList.toggle("fuerte", !encendida);
+    const aviso = $("aviso"), texto = $("aviso-txt");
+    const colgado = (datos.corriendo || []).find((t) => t.actividades && t.actividades.dia !== hoyEn(CONFIG.zona));
+    let mensaje = "", urge = false;
+    if (!encendida) { mensaje = "Sabrina está apagada. No hace nada hasta que la enciendas."; urge = true; }
+    else if (colgado) { mensaje = `Sigue corriendo un cronómetro de otro día: ${colgado.actividades.titulo}. Páusalo desde «Otros».`; urge = true; }
+    else if (!datos.latidos.some((l) => l.componente === "puerta")) mensaje = "La Puerta aún no recibe avisos de Meta.";
+    aviso.hidden = !mensaje; aviso.classList.toggle("urge", urge); texto.textContent = mensaje;
+  }
+
+  function pintaTodo() {
+    if (!datos) return;
+    pintaCabeza(); pintaDia(); pintaOk(); pintaActividad(); pintaSabrina();
+  }
+
+  // ── Acciones ──────────────────────────────────────────────────────────────
+  async function refresca() {
+    if (!sesion || !sesion.dueno) return;
+    try { datos = await fuente.cargar(); pintaTodo(); }
+    catch (e) { brinda("No se pudo actualizar: " + e.message); }
+  }
+  async function hacer(sonido, fn) {
+    if (ocupado) return;
+    ocupado = true;
+    try { await fn(); suena(sonido); await refresca(); }
+    catch (e) { suena("no"); brinda(e.message || "No se pudo"); }
+    finally { ocupado = false; }
+  }
+
+  $("dia-lista").addEventListener("click", (e) => {
+    const toca = e.target.closest("[data-toca]"), hecha = e.target.closest("[data-hecha]"), mas = e.target.closest("[data-mas]");
+    if (toca) { const id = Number(toca.dataset.toca); const pausando = id === activaId(); hacer(pausando ? "pausa" : "inicia", () => pausando ? fuente.pausar() : fuente.iniciar(id)); }
+    else if (hecha) hacer("hecho", () => fuente.cerrar(Number(hecha.dataset.hecha)));
+    else if (mas) { verTodo.dia = !verTodo.dia; pintaDia(); }
+  });
+  $("b-otros").addEventListener("click", () => {
+    const otros = datos && datos.actividades.find((a) => a.tipo === "otros");
+    const pausando = !!(otros && otros.id === activaId());
+    hacer(pausando ? "pausa" : "inicia", () => pausando ? fuente.pausar() : fuente.otros());
+  });
+  $("dia-alta").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const campo = $("dia-titulo"), titulo = campo.value.trim();
+    if (!titulo) return;
+    const orden = datos ? datos.actividades.filter((a) => a.tipo !== "otros").reduce((m, a) => Math.max(m, a.orden), 0) + 1 : 1;
+    hacer("abre", async () => { await fuente.agregar(titulo, $("dia-tipo").value, orden); campo.value = ""; });
+  });
+  $("ok-lista").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-decide]"), mas = e.target.closest("[data-mas]");
+    if (b) hacer(b.dataset.decide === "aprobar" ? "si" : "no", () => fuente.decidir(Number(b.dataset.id), b.dataset.decide));
+    else if (mas) { verTodo.ok = !verTodo.ok; pintaOk(); }
+  });
+  $("act-lista").addEventListener("click", (e) => { if (e.target.closest("[data-mas]")) { verTodo.act = !verTodo.act; pintaActividad(); } });
+  $("b-orbe").addEventListener("click", () => abre("ok", false));
+  $("b-modo").addEventListener("click", () => {
+    if (!datos) return;
+    const apagar = datos.modo === "on";
+    if (!window.confirm(apagar ? "¿Apagar a Sabrina? Dejará de actuar hasta que la enciendas." : "¿Encender a Sabrina?")) return;
+    hacer(apagar ? "no" : "si", () => fuente.modo(apagar ? "off" : "on"));
+  });
+  $("b-salir").addEventListener("click", async () => { try { await fuente.salir(); } finally { location.reload(); } });
+  $("b-entrar").addEventListener("click", async () => { try { await fuente.entrar(); } catch (e) { brinda("No se pudo entrar: " + e.message); } });
+  $("b-otra").addEventListener("click", async () => { try { await fuente.salir(); } finally { location.reload(); } });
+
+  // ── Reloj ─────────────────────────────────────────────────────────────────
+  function tic() {
+    const ahora = new Date();
+    $("hora").textContent = horaEn(CONFIG.zona, ahora);
+    const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: CONFIG.zona, weekday: "short", day: "numeric", month: "short" }).format(ahora);
+    $("fecha").textContent = `${fecha} · Vancouver · CDMX ${horaEn("America/Mexico_City", ahora)}`;
+    if (noche === null) pintaTema();
+    pintaTotales();
+  }
+
+  // ── Arranque ──────────────────────────────────────────────────────────────
+  async function arranca() {
+    pintaTema(); pintaSonido(); tic(); setInterval(tic, 1000);
+    $("demo").hidden = !DEMO;
+    try { sesion = await fuente.sesion(); }
+    catch (e) { sesion = null; $("entrada-txt").textContent = "No se pudo conectar: " + e.message; }
+    if (!sesion || !sesion.dueno) {
+      $("entrada").hidden = false; $("estado-txt").textContent = "sin entrar";
+      if (sesion && !sesion.dueno) {
+        $("entrada-txt").textContent = "Esta cuenta no tiene acceso a Sabrina.";
+        $("b-entrar").hidden = true; $("b-otra").hidden = false;
+      }
+      return;
+    }
+    $("muelle").hidden = false; $("b-salir").hidden = DEMO;
+    $("nota").hidden = false;
+    $("nota").textContent = DEMO ? "Datos de ejemplo. Los cronómetros corren, pero nada se guarda." : "Tu día, las aprobaciones y la actividad son reales. Correos, ventas y agentes aún no están conectados.";
+    pintaVentanas();
+    await refresca();
+    setInterval(refresca, CONFIG.cada);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresca(); });
+  }
+  arranca();
+})();
+</script>
+</body>
+</html>
