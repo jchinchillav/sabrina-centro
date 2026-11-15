@@ -147,8 +147,8 @@ button{font-family:inherit}
 .angulo{margin:0;font-size:13px;line-height:1.4}
 .contacto{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px}
 .contacto a{text-underline-offset:2px}
-.acciones{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.acciones .boton{padding:0 8px;font-size:13px}
+.acciones{display:flex;flex-wrap:wrap;gap:6px}
+.acciones .boton{flex:1 1 auto;padding:0 10px;font-size:13px}
 .sigue{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:6px 12px;border-radius:16px;border:0;background:var(--pozo);color:inherit;font:inherit;text-align:left;cursor:pointer}
 .sigue b{font-weight:500;overflow-wrap:anywhere}
 .sigue:hover{opacity:.85}
@@ -165,6 +165,15 @@ button{font-family:inherit}
 .entrada{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px}
 .entrada .caja{width:min(420px,100%);padding:28px 26px;text-align:center;background:var(--glass);border:1px solid var(--edge);border-radius:34px 26px 30px 24px/24px 30px 26px 34px;backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:var(--sombra);display:flex;flex-direction:column;gap:14px;align-items:center}
 .entrada .marca{font-size:84px}
+
+/* ── Pantallas bajas (laptop): el orbe se encoge para que la ficha de ventas quepa entera ── */
+@media (min-width:901px) and (max-height:900px){
+  .orbe{top:64px;width:220px;height:180px}
+  .orbe .puntos{font-size:60px}
+  .aviso{top:252px}
+  #v-ventas{top:308px}
+  #v-ventas .cuerpo{max-height:calc(100vh - 464px);min-height:200px}
+}
 
 /* ── Pantallas angostas: las ventanas se apilan ── */
 @media (max-width:900px){
@@ -932,7 +941,7 @@ button{font-family:inherit}
     const i = Math.max(0, tocan.findIndex((c) => c.id === focoVentas));
     const foco = tocan[i];
     const resto = tocan.filter((c) => c !== foco);
-    const siguen = recorta(resto, "ven").map((c) => `<button type="button" class="sigue" data-cuenta="${esc(c.id)}"><b>${esc(c.nombre)}</b><span class="tenue" style="white-space:nowrap">${esc(SEGMENTOS[c.segmento] || c.segmento)}</span></button>`);
+    const siguen = recorta(resto, "ven").map((c) => `<button type="button" class="sigue" data-cuenta="${esc(c.id)}"><b>${esc(c.nombre)}</b><span class="tenue" style="white-space:nowrap">${esc(SEGMENTOS[c.segmento] || c.segmento)}${c.ultima_venta ? ` · ${diasEntre(c.ultima_venta, hoyEn(CONFIG.zona))} d` : ""}</span></button>`);
     const ventas = datos.latidos.find((l) => l.componente === "ventas");
     $("ven-lista").innerHTML = (foco ? fichaVentas(foco, i, tocan.length) : '<div class="vacio">Al día: nadie te toca hoy.</div>')
       + (siguen.length ? '<span class="grupo">Siguen</span>' + siguen.join("") + botonMas(resto, "ven") : "")
