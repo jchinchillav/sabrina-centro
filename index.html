@@ -85,6 +85,8 @@ button{font-family:inherit}
 #v-ventas .cuerpo{max-height:calc(100vh - 560px);min-height:220px}
 #v-correos{right:24px;top:480px;width:350px;border-radius:24px 32px 22px 34px/30px 22px 32px 24px}
 #v-correos .cuerpo{max-height:calc(100vh - 640px);min-height:120px}
+#v-charla{right:24px;top:92px;width:400px;border-radius:30px 24px 26px 32px/26px 32px 24px 30px}
+#v-charla .cuerpo{max-height:calc(100vh - 330px);min-height:140px}
 #v-sistemas{right:24px;top:480px;width:350px;border-radius:26px 32px 24px 30px/32px 24px 30px 22px}
 #v-sistemas .cuerpo{max-height:calc(100vh - 640px);min-height:120px}
 #v-agentes{left:24px;top:560px;width:430px;border-radius:32px 24px 30px 26px/24px 32px 22px 30px}
@@ -152,6 +154,11 @@ button{font-family:inherit}
 .sigue{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:6px 12px;border-radius:16px;border:0;background:var(--pozo);color:inherit;font:inherit;text-align:left;cursor:pointer}
 .sigue b{font-weight:500;overflow-wrap:anywhere}
 .sigue:hover{opacity:.85}
+.charla{display:flex;flex-direction:column;gap:4px;padding:8px 12px;border-radius:16px;background:var(--pozo)}
+.charla .q{font-weight:500;overflow-wrap:anywhere;white-space:pre-wrap}
+.charla .r{font-size:13.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.charla .r a{text-underline-offset:2px}
+.charla .r.falla{color:var(--warn)}
 
 /* ── Barra de ventanas ── */
 .muelle{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px;border-radius:32px;background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:var(--sombra);z-index:40;max-width:calc(100vw - 24px);overflow-x:auto}
@@ -280,6 +287,18 @@ button{font-family:inherit}
     </div>
   </section>
 
+  <section id="v-charla" class="ventana" aria-label="Pregúntale" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana Pregúntale"><h2>pregúntale</h2><span id="cha-sub" class="tenue"></span></button>
+      <button type="button" class="cierra" aria-label="Cerrar Pregúntale">×</button>
+    </div>
+    <div id="cha-lista" class="cuerpo" aria-live="polite"></div>
+    <form id="cha-alta" class="alta" autocomplete="off">
+      <input id="cha-texto" type="text" maxlength="4000" placeholder="Pregúntale o pídele que anote algo" aria-label="Pregúntale a Sabrina">
+      <button type="submit" class="boton fuerte redondo" aria-label="Enviar pregunta">↑</button>
+    </form>
+  </section>
+
   <section id="v-ok" class="ventana" aria-label="Esperan tu OK" hidden>
     <div class="cabeza">
       <button type="button" class="asa" aria-label="Mover la ventana Esperan tu OK"><h2>esperan tu ok</h2><span id="ok-sub" class="tenue"></span></button>
@@ -338,6 +357,7 @@ button{font-family:inherit}
 
   <nav id="muelle" class="muelle" aria-label="Ventanas" hidden>
     <button type="button" class="boton" data-abre="dia">Tu día</button>
+    <button type="button" class="boton" data-abre="charla">Pregúntale</button>
     <button type="button" class="boton" data-abre="ok">Aprobaciones</button>
     <button type="button" class="boton" data-abre="ventas">Ventas</button>
     <button type="button" class="boton" data-abre="correos">Correos</button>
@@ -418,6 +438,10 @@ button{font-family:inherit}
     google_conectado: "Conectaste tu correo y tu agenda",
     google_desconectado: "Se desconectó tu correo y tu agenda",
     toque_registrado: "Registraste un toque",
+    actividad_agregada: "Sabrina agregó a tu día",
+    actividad_hecha: "Sabrina marcó hecha",
+    cerebro_actuo: "Sabrina anotó lo que le pediste",
+    wa_comando: "Comando por WhatsApp",
   };
   const ESTADOS = { aprobada: "Aprobada. La ejecuta la Puerta.", rechazada: "Rechazada.", expirada: "Venció sin decidir.", ejecutada: "Hecha.", fallida: "Falló al ejecutarse." };
 
@@ -450,12 +474,13 @@ button{font-family:inherit}
     const pide = async (promesa) => { const { data, error } = await promesa; if (error) throw new Error(error.message || "Falla de datos"); return data; };
     // Tablas que pueden no existir todavía: si fallan, la pantalla sigue.
     const pideSiHay = async (promesa) => { const { data, error } = await promesa; return error ? null : data; };
-    const funcion = async (accion, extra = {}) => {
+    const funcion = (accion, extra = {}) => llamar("google", accion, extra);
+    const llamar = async (nombre, accion, extra = {}) => {
       const sb = await c();
       const { data } = await sb.auth.getSession();
       if (!data || !data.session) return { ok: false, motivo: "sin_permiso" };
       try {
-        const res = await fetch(CONFIG.url + "/functions/v1/google", {
+        const res = await fetch(CONFIG.url + "/functions/v1/" + nombre, {
           method: "POST",
           headers: { apikey: CONFIG.llave, Authorization: "Bearer " + data.session.access_token, "Content-Type": "application/json" },
           body: JSON.stringify({ accion, ...extra }),
@@ -505,19 +530,21 @@ button{font-family:inherit}
           pide(sb.from("wa_desconocidos").select("wa_id,intentos")),
         ]);
         const desde = new Date(Date.now() - 400 * 86400e3).toISOString();
-        const [correos, agenda, cuentas, toques, sistemas, agentes] = await Promise.all([
+        const [correos, agenda, cuentas, toques, sistemas, agentes, preguntas] = await Promise.all([
           pideSiHay(sb.from("correos").select("thread_id,remitente,asunto,ultimo_en,mensajes").eq("estado", "pendiente").order("ultimo_en", { ascending: false }).limit(50)),
           pideSiHay(sb.from("agenda").select("evento_id,inicio,titulo,enlace,reunion").eq("dia", dia).eq("estado", "vigente").order("inicio")),
           pideSiHay(sb.from("cuentas").select("id,netsuite_id,nombre,tipo,segmento,prioridad,motivo,etapa,ultima_venta,ventas_12m,facturas_12m,moneda,paso,paso_vence,cadencia_dias,angulo,contacto,telefono,correo,ubicacion,nota").order("prioridad").limit(1000)),
           pideSiHay(sb.from("toques").select("id,cuenta_id,en,tipo,resultado").gte("en", desde).order("en", { ascending: false }).limit(2000)),
           pideSiHay(sb.from("sistemas").select("clave,nombre,grupo,que_mide,ultimo_dato,estado,nota,medido_en,orden").order("orden")),
           pideSiHay(sb.from("agentes").select("clave,nombre,que_hace,cada,componente,umbral_min,falta,orden").order("orden")),
+          pideSiHay(sb.from("preguntas").select("id,en,canal,pregunta,respuesta,estado,motivo,costo_usd").order("en", { ascending: false }).limit(60)),
         ]);
         const ids = actividades.map((a) => a.id);
         const tiempos = ids.length ? await pide(sb.from("tiempos").select("id,actividad_id,inicio,fin,segundos").in("actividad_id", ids)) : [];
         const valor = (clave) => (config.find((x) => x.clave === clave) || {}).valor;
-        return { modo: valor("modo") === "on" ? "on" : "off", google: valor("google_estado") || null, netsuite: typeof valor("netsuite_url") === "string" ? valor("netsuite_url") : null, actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos, correos: correos || [], agenda: agenda || [], cuentas: cuentas || [], toques: toques || [], sistemas: sistemas || [], agentes: agentes || [] };
+        return { modo: valor("modo") === "on" ? "on" : "off", google: valor("google_estado") || null, netsuite: typeof valor("netsuite_url") === "string" ? valor("netsuite_url") : null, actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos, correos: correos || [], agenda: agenda || [], cuentas: cuentas || [], toques: toques || [], sistemas: sistemas || [], agentes: agentes || [], preguntas: preguntas || [] };
       },
+      async preguntar(texto) { return llamar("cerebro", "preguntar", { texto }); },
       async agregar(titulo, tipo, orden) { const sb = await c(); await pide(sb.from("actividades").insert({ titulo, tipo, orden })); },
       async iniciar(id) { const sb = await c(); await pide(sb.rpc("iniciar_cronometro", { p_actividad_id: id })); },
       async pausar() { const sb = await c(); await pide(sb.rpc("pausar_cronometro")); },
@@ -577,6 +604,9 @@ button{font-family:inherit}
         { id: "ej:5", netsuite_id: null, nombre: "Cuenta sin datos (ejemplo)", tipo: "prospecto", segmento: "depurar", prioridad: 9, motivo: "Depurar: datos sin verificar", etapa: "Depurar", cadencia_dias: 30 },
       ],
       toques: [{ id: 1, cuenta_id: "ej:4", en: new Date(t0 - 3 * 86400e3).toISOString(), tipo: "llamada", resultado: "hecho" }],
+      preguntas: [
+        { id: 1, en: new Date(t0 - 25 * min).toISOString(), canal: "whatsapp", pregunta: "¿A quién le toca hoy? (ejemplo)", respuesta: "*Primero: Cliente dormido de ejemplo*, 90 días sin comprar y US$ 479 mil en 12 meses.\n• Llama a Compras: 000 000 0000\n• Ficha: https://ejemplo.app.netsuite.com/app/common/entity/custjob.nl?id=1", estado: "lista", motivo: null, costo_usd: 0.012 },
+      ],
       sistemas: [
         { clave: "s1", nombre: "Copia de tarifas (ejemplo)", grupo: "Ventas", que_mide: "Copia diaria desde NetSuite", ultimo_dato: new Date(t0 - 7 * 3600e3).toISOString(), estado: "ok", nota: null, medido_en: new Date(t0 - 30 * min).toISOString(), orden: 10 },
         { clave: "s2", nombre: "Rastreo de embarques (ejemplo)", grupo: "Operación", que_mide: "Sincronización con NetSuite", ultimo_dato: new Date(t0 - 50 * min).toISOString(), estado: "ok", nota: null, medido_en: new Date(t0 - 30 * min).toISOString(), orden: 20 },
@@ -626,6 +656,17 @@ button{font-family:inherit}
         anota("dueno", decision === "aprobar" ? "aprobacion_aprobada" : "aprobacion_rechazada", { titulo: a.titulo });
       },
       async modo(x) { m.modo = x; anota("dueno", x === "off" ? "apagado" : "encendido"); },
+      async preguntar(texto) {
+        const agrega = /^agrega (.+)$/i.exec(texto.trim());
+        let respuesta = "(ejemplo) En la pantalla real contesta Claude con tus datos de este momento.";
+        if (agrega) {
+          m.actividades.push({ id: sig++, dia, titulo: agrega[1], tipo: "ingresos", origen: "sabrina", orden: 50, estado: "pendiente" });
+          anota("dueno", "actividad_agregada", { titulo: agrega[1] });
+          respuesta = `Listo.\n\n✓ Agregué a tu día: «${agrega[1]}» (Ingresos).`;
+        }
+        m.preguntas.unshift({ id: sig++, en: new Date().toISOString(), canal: "pantalla", pregunta: texto, respuesta, estado: "lista", motivo: null, costo_usd: 0.004 });
+        return { ok: true, respuesta };
+      },
       async toque(cuenta, tipo, resultado) {
         const c = m.cuentas.find((x) => x.id === cuenta);
         if (!c) throw new Error("Esa cuenta no existe");
@@ -675,8 +716,8 @@ button{font-family:inherit}
   }
 
   // ── Ventanas: mover, cerrar, traer al frente, recordar posición ───────────
-  const VENTANAS = ["dia", "ok", "ventas", "correos", "sistemas", "agentes", "actividad", "sabrina"];
-  const abiertas = Object.assign({ dia: true, ok: true, ventas: true, correos: false, sistemas: false, agentes: false, actividad: false, sabrina: false }, leer("abiertas", {}));
+  const VENTANAS = ["dia", "charla", "ok", "ventas", "correos", "sistemas", "agentes", "actividad", "sabrina"];
+  const abiertas = Object.assign({ dia: true, charla: false, ok: true, ventas: true, correos: false, sistemas: false, agentes: false, actividad: false, sabrina: false }, leer("abiertas", {}));
   const lugar = leer("lugar", {});
   let cima = 10;
   function alFrente(nombre) { $("v-" + nombre).style.zIndex = String(++cima); }
@@ -713,7 +754,10 @@ button{font-family:inherit}
     v.addEventListener("pointerdown", () => alFrente(n));
     v.querySelector(".cierra").addEventListener("click", () => { abiertas[n] = false; pintaVentanas(); });
   }
-  document.querySelectorAll("[data-abre]").forEach((b) => b.addEventListener("click", () => abre(b.dataset.abre)));
+  document.querySelectorAll("[data-abre]").forEach((b) => b.addEventListener("click", () => {
+    abre(b.dataset.abre);
+    if (b.dataset.abre === "charla" && abiertas.charla) $("cha-texto").focus();
+  }));
 
 
   // ── Tema ──────────────────────────────────────────────────────────────────
@@ -842,6 +886,10 @@ button{font-family:inherit}
     const mas = [v, s].filter(Boolean).sort((a, b) => Date.parse(a.ultimo_en) - Date.parse(b.ultimo_en))[0];
     return mas ? esc("A mano, " + hace(mas.ultimo_en)) : "Sin cargar";
   }
+  function faltanTexto() {
+    const faltan = (datos.agentes || []).filter((a) => a.falta).map((a) => a.nombre);
+    return faltan.length ? `Falta conectar: ${esc(faltan.join(", "))}. Detalle en Agentes.` : "Todo conectado.";
+  }
   function pintaSabrina() {
     const puerta = datos.latidos.find((l) => l.componente === "puerta");
     const google = datos.latidos.find((l) => l.componente === "google");
@@ -858,7 +906,7 @@ button{font-family:inherit}
       <div class="dato"><span>Números desconocidos</span><b>${datos.desconocidos.length ? `${datos.desconocidos.length} · ${extranos} intentos` : "Ninguno"}</b></div>
       ${lectura}
       <div class="dato"><span>Ventas y sistemas</span><b>${fotoManual()}</b></div>
-      <div class="vacio">Sin conectar todavía: el cerebro y las respuestas por WhatsApp. Míralo en Agentes.</div>`;
+      <div class="vacio">${faltanTexto()}</div>`;
   }
 
 
@@ -948,6 +996,46 @@ button{font-family:inherit}
       + `<span class="tenue">${alDia.length} al día${depurar.length ? ` · ${depurar.length} por depurar (sin datos verificados)` : ""}${ventas ? ` · datos cargados ${esc(hace(ventas.ultimo_en))}` : ""}</span>`;
   }
 
+  // ── Pregúntale: el mismo cerebro que contesta por WhatsApp ────────────────
+  const MOTIVOS_CEREBRO = {
+    sin_llave: "Falta la llave de Claude en Supabase (ANTHROPIC_API_KEY).",
+    llave: "Claude no aceptó la llave guardada en Supabase.",
+    limite: "Claude pidió esperar un momento por límite de uso.",
+    tope: "Llegaste al tope de preguntas de hoy.",
+    apagada: "Sabrina está apagada.",
+    texto: "Escribe algo (máximo 4,000 caracteres).",
+    sin_funcion: "El cerebro todavía no está instalado.",
+    sin_permiso: "Tu sesión venció. Recarga la página.",
+  };
+  const motivoCerebro = (m) => MOTIVOS_CEREBRO[m] || "No pude pensar la respuesta. Intenta de nuevo en un momento.";
+  let pensando = null;
+  // Texto de Sabrina: se escapa primero; luego *negritas* y ligas https.
+  const negritas = (h) => h.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g, "$1<b>$2</b>");
+  function conFormato(t) {
+    // Las ligas quedan en los lugares impares al partir; solo https, nunca javascript: ni data:.
+    return String(t ?? "").split(/(https:\/\/[^\s<>"']+[^\s<>"'.,;:!?)])/g)
+      .map((p, i) => (i % 2 ? `<a href="${esc(p)}" target="_blank" rel="noopener noreferrer">${esc(p)}</a>` : negritas(esc(p))))
+      .join("");
+  }
+  function pintaCharla() {
+    const todas = datos.preguntas || [];
+    const hoy = hoyEn(CONFIG.zona);
+    const deHoy = todas.filter((p) => hoyEn(CONFIG.zona, new Date(p.en)) === hoy);
+    const costo = deHoy.reduce((s, p) => s + (Number(p.costo_usd) || 0), 0);
+    $("cha-sub").textContent = deHoy.length ? `${deHoy.length} hoy · US$ ${costo.toFixed(2)}` : "";
+    const ultimas = todas.slice(0, 6).reverse();
+    const filas = ultimas.map((p) => {
+      const cuando = `${horaEn(CONFIG.zona, new Date(p.en))}${p.canal === "whatsapp" ? " · WhatsApp" : ""}`;
+      const r = p.estado === "lista" ? `<div class="r">${conFormato(p.respuesta || "")}</div>`
+        : p.estado === "pensando" ? '<div class="r tenue">pensando…</div>'
+        : `<div class="r falla">${esc(p.respuesta ? p.respuesta + "\n\n" : "")}${esc(motivoCerebro(p.motivo))}</div>`;
+      return `<div class="charla"><span class="tenue">${esc(cuando)}</span><span class="q">${esc(p.pregunta)}</span>${r}</div>`;
+    });
+    if (pensando) filas.push(`<div class="charla"><span class="tenue">ahora</span><span class="q">${esc(pensando)}</span><div class="r tenue">pensando…</div></div>`);
+    $("cha-lista").innerHTML = filas.join("") || '<div class="vacio">Pregúntale lo que sea de tu día, tus correos, tu agenda, la ráfaga de ventas o los sistemas. También puede anotar: «agrega a mi día cotizar a Recipak», «llamé a Pallets M3, no contestó».</div>';
+    const lista = $("cha-lista"); lista.scrollTop = lista.scrollHeight;
+  }
+
   // ── Sistemas: si cada proceso sigue produciendo datos ─────────────────────
   const ESTADO_SIS = { ok: ["al día", "ok"], atrasado: ["atrasado", "warn"], caido: ["caído", "mal"], manual: ["a mano", ""] };
   function pintaSistemas() {
@@ -1011,7 +1099,7 @@ button{font-family:inherit}
 
   function pintaTodo() {
     if (!datos) return;
-    pintaCabeza(); pintaDia(); pintaOk(); pintaVentas(); pintaCorreos(); pintaSistemas(); pintaAgentes(); pintaActividad(); pintaSabrina();
+    pintaCabeza(); pintaDia(); pintaCharla(); pintaOk(); pintaVentas(); pintaCorreos(); pintaSistemas(); pintaAgentes(); pintaActividad(); pintaSabrina();
   }
 
   // ── Acciones ──────────────────────────────────────────────────────────────
@@ -1075,6 +1163,18 @@ button{font-family:inherit}
     } else if (salta) { saltar(salta.dataset.saltar); focoVentas = null; suena("pausa"); pintaVentas(); }
     else if (cuenta) { focoVentas = cuenta.dataset.cuenta; suena("abre"); pintaVentas(); $("ven-lista").scrollTop = 0; }
     else if (mas) { verTodo.ven = !verTodo.ven; pintaVentas(); }
+  });
+  $("cha-alta").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const campo = $("cha-texto"), texto = campo.value.trim();
+    if (!texto || ocupado || pensando) return;
+    pensando = texto; campo.value = ""; campo.disabled = true; ocupado = true;
+    pintaCharla(); suena("abre");
+    try {
+      const r = await fuente.preguntar(texto);
+      if (r && r.ok) suena("si"); else { suena("no"); brinda(motivoCerebro(r && r.motivo)); }
+    } catch (err) { suena("no"); brinda(err.message || "No se pudo"); }
+    finally { pensando = null; ocupado = false; campo.disabled = false; await refrescaYa(); campo.focus(); }
   });
   $("act-lista").addEventListener("click", (e) => { if (e.target.closest("[data-mas]")) { verTodo.act = !verTodo.act; pintaActividad(); } });
   $("b-orbe").addEventListener("click", () => abre("ok", false));
