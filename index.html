@@ -746,10 +746,27 @@ button{font-family:inherit}
     pintaTotales();
   }
 
+  // Si el ingreso falla, Supabase regresa con el motivo en la dirección. Se muestra en
+  // claro, sin códigos, y se limpia la dirección para que no se quede pegado.
+  function falloDeEntrada() {
+    const p = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const motivo = p.get("error_description") || h.get("error_description") || p.get("error") || h.get("error");
+    if (!motivo) return "";
+    try {
+      ["error", "error_code", "error_description"].forEach((k) => p.delete(k));
+      const resto = p.toString();
+      history.replaceState(null, "", location.pathname + (resto ? "?" + resto : ""));
+    } catch { /* la dirección se queda como está */ }
+    if (/exchange external code/i.test(motivo)) return "Google no aceptó la credencial guardada en Supabase. Es de configuración, no de tu cuenta.";
+    if (/denied|cancel/i.test(motivo)) return "Se canceló el ingreso con Google.";
+    return motivo.replace(/[A-Za-z0-9_\-\/]{24,}/g, "…").slice(0, 160);
+  }
+
   // ── Arranque ──────────────────────────────────────────────────────────────
   async function arranca() {
     pintaTema(); pintaSonido(); tic(); setInterval(tic, 1000);
     $("demo").hidden = !DEMO;
+    const fallo = DEMO ? "" : falloDeEntrada();
     try { sesion = await fuente.sesion(); }
     catch (e) { sesion = null; $("entrada-txt").textContent = "No se pudo conectar: " + e.message; }
     if (!sesion || !sesion.dueno) {
@@ -757,7 +774,7 @@ button{font-family:inherit}
       if (sesion && !sesion.dueno) {
         $("entrada-txt").textContent = "Esta cuenta no tiene acceso a Sabrina.";
         $("b-entrar").hidden = true; $("b-otra").hidden = false;
-      }
+      } else if (fallo) $("entrada-txt").textContent = "No se pudo entrar. " + fallo;
       return;
     }
     $("muelle").hidden = false; $("b-salir").hidden = DEMO;
