@@ -81,10 +81,12 @@ button{font-family:inherit}
 .cuerpo{display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 300px);overflow:auto}
 #v-dia{left:24px;top:92px;width:430px;border-radius:30px 24px 34px 22px/24px 32px 22px 30px}
 #v-ok{right:24px;top:92px;width:350px;border-radius:32px 22px 30px 26px/22px 34px 24px 32px}
-#v-actividad{left:50%;top:404px;width:460px;margin-left:-230px;border-radius:24px 32px 22px 34px/30px 22px 32px 24px}
-#v-actividad .cuerpo{max-height:calc(100vh - 570px);min-height:120px}
+#v-correos{left:50%;top:404px;width:460px;margin-left:-230px;border-radius:24px 32px 22px 34px/30px 22px 32px 24px}
+#v-correos .cuerpo{max-height:calc(100vh - 570px);min-height:120px}
+#v-actividad{right:24px;top:480px;width:350px;border-radius:30px 22px 34px 24px/22px 32px 24px 30px}
+#v-actividad .cuerpo{max-height:calc(100vh - 640px);min-height:120px}
 #v-ok .cuerpo{max-height:calc(100vh - 250px)}
-#v-sabrina{right:24px;top:480px;width:350px;border-radius:26px 30px 24px 32px/32px 24px 30px 22px}
+#v-sabrina{left:24px;top:560px;width:430px;border-radius:26px 30px 24px 32px/32px 24px 30px 22px}
 #v-pendiente{left:50%;top:404px;width:460px;margin-left:-230px;border-radius:34px 26px 30px 24px/24px 30px 26px 34px}
 
 .pista{display:flex;align-items:center;gap:10px;padding:4px 6px 4px 10px;border-radius:22px;background:var(--pozo);border:1px solid transparent}
@@ -116,6 +118,11 @@ button{font-family:inherit}
 .renglon{display:flex;gap:10px;padding:6px 10px;border-radius:16px;background:var(--pozo);align-items:baseline}
 .renglon .hora{font:700 13px Doto,monospace;color:var(--ink2);flex:none;width:46px}
 .renglon .que{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.correo{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:16px;background:var(--pozo);text-decoration:none}
+.correo:hover{opacity:.85}
+.correo .quien{display:flex;justify-content:space-between;gap:10px}
+.correo .quien b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.correo .asunto{color:var(--ink2);font-size:13px;overflow-wrap:anywhere}
 .vacio{padding:10px 12px;border-radius:16px;border:1px dashed var(--line);color:var(--ink2);font-size:13px}
 .mas{align-self:flex-start;height:36px;font-size:12px}
 .dato{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border-radius:16px;background:var(--pozo)}
@@ -263,6 +270,14 @@ button{font-family:inherit}
     <div id="sab-lista" class="cuerpo"></div>
   </section>
 
+  <section id="v-correos" class="ventana" aria-label="Por responder" hidden>
+    <div class="cabeza">
+      <button type="button" class="asa" aria-label="Mover la ventana Por responder"><h2>por responder</h2><span id="cor-sub" class="tenue"></span></button>
+      <button type="button" class="cierra" aria-label="Cerrar Por responder">×</button>
+    </div>
+    <div id="cor-lista" class="cuerpo"></div>
+  </section>
+
   <section id="v-pendiente" class="ventana" aria-label="Sin conectar" hidden>
     <div class="cabeza">
       <button type="button" class="asa" aria-label="Mover la ventana"><h2 id="pen-titulo">sin conectar</h2><span class="tenue">todavía</span></button>
@@ -276,7 +291,7 @@ button{font-family:inherit}
     <button type="button" class="boton" data-abre="ok">Aprobaciones</button>
     <button type="button" class="boton" data-abre="actividad">Actividad</button>
     <button type="button" class="boton" data-abre="sabrina">Sabrina</button>
-    <button type="button" class="boton" data-pendiente="correos">Correos</button>
+    <button type="button" class="boton" data-abre="correos">Correos</button>
     <button type="button" class="boton" data-pendiente="ventas">Ventas</button>
     <button type="button" class="boton" data-pendiente="agentes">Agentes</button>
   </nav>
@@ -308,6 +323,7 @@ button{font-family:inherit}
     huella: "sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK",
     zona: "America/Vancouver",
     cada: 20000,
+    permisos: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly",
   };
   const DEMO = new URLSearchParams(location.search).has("demo");
   const $ = (id) => document.getElementById(id);
@@ -339,7 +355,7 @@ button{font-family:inherit}
     if (seg < 86400) return `hace ${Math.floor(seg / 3600)} h`;
     return `hace ${Math.floor(seg / 86400)} d`;
   }
-  const TIPOS = { urgente: "Urgente", ingresos: "Ingresos", backoffice: "Backoffice", otros: "Otros" };
+  const TIPOS = { urgente: "Urgente", ingresos: "Ingresos", backoffice: "Backoffice", otros: "Otros", junta: "Junta" };
   const EVENTOS = {
     wa_mensaje_recibido: "Llegó un mensaje tuyo por WhatsApp",
     wa_envio_fallido: "No se pudo contestar por WhatsApp",
@@ -348,8 +364,22 @@ button{font-family:inherit}
     aprobacion_expirada: "Venció una aprobación sin decidir",
     apagado: "Apagaste a Sabrina",
     encendido: "Encendiste a Sabrina",
+    google_conectado: "Conectaste tu correo y tu agenda",
+    google_desconectado: "Se desconectó tu correo y tu agenda",
   };
   const ESTADOS = { aprobada: "Aprobada. La ejecuta la Puerta.", rechazada: "Rechazada.", expirada: "Venció sin decidir.", ejecutada: "Hecha.", fallida: "Falló al ejecutarse." };
+
+  const MOTIVOS = {
+    faltan_secretos: "Falta capturar la credencial de Google en los secretos de Supabase.",
+    otra_cuenta: "Esa no es tu cuenta de trabajo. Conecta la cuenta con la que entras a Sabrina.",
+    faltan_permisos: "Faltó aceptar los permisos de Gmail y de Calendar.",
+    revocado: "Google ya no acepta el permiso. Conecta de nuevo.",
+    credencial: "Google no aceptó la credencial guardada en Supabase.",
+    sin_permiso: "Google no devolvió el permiso. Intenta conectar de nuevo.",
+    sin_funcion: "El lector de Google todavía no está instalado.",
+    sin_conectar: "Tu correo y tu agenda no están conectados.",
+  };
+  const motivoClaro = (r) => MOTIVOS[r && r.motivo] || "No se pudo completar. Intenta de nuevo.";
 
   // ── Fuente de datos real (Supabase) ───────────────────────────────────────
   function fuenteReal() {
@@ -366,13 +396,42 @@ button{font-family:inherit}
       return cliente;
     };
     const pide = async (promesa) => { const { data, error } = await promesa; if (error) throw new Error(error.message || "Falla de datos"); return data; };
+    // Tablas que pueden no existir todavía: si fallan, la pantalla sigue.
+    const pideSiHay = async (promesa) => { const { data, error } = await promesa; return error ? null : data; };
+    const funcion = async (accion, extra = {}) => {
+      const sb = await c();
+      const { data } = await sb.auth.getSession();
+      if (!data || !data.session) return { ok: false, motivo: "sin_permiso" };
+      try {
+        const res = await fetch(CONFIG.url + "/functions/v1/google", {
+          method: "POST",
+          headers: { apikey: CONFIG.llave, Authorization: "Bearer " + data.session.access_token, "Content-Type": "application/json" },
+          body: JSON.stringify({ accion, ...extra }),
+        });
+        if (res.status === 404) return { ok: false, motivo: "sin_funcion" };
+        const cuerpo = await res.json().catch(() => null);
+        return cuerpo && typeof cuerpo === "object" ? cuerpo : { ok: false, motivo: "falla" };
+      } catch { return { ok: false, motivo: "sin_funcion" }; }
+    };
     return {
       async sesion() {
         const sb = await c();
         const { data } = await sb.auth.getSession();
         if (!data || !data.session) return null;
         const dueno = await pide(sb.rpc("es_dueno"));
-        return { correo: data.session.user.email || "", dueno: dueno === true };
+        return { correo: data.session.user.email || "", dueno: dueno === true, permisoGoogle: data.session.provider_refresh_token || "" };
+      },
+      async googleEstado() { return funcion("estado"); },
+      async googleConectar(permiso) { return funcion("conectar", { refresh_token: permiso }); },
+      async googleDesconectar() { return funcion("desconectar"); },
+      async googleActualizar() { return funcion("sync"); },
+      async googlePedirPermiso() {
+        const sb = await c();
+        const { error } = await sb.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: location.origin + location.pathname, scopes: CONFIG.permisos, queryParams: { access_type: "offline", prompt: "consent" } },
+        });
+        if (error) throw new Error(error.message);
       },
       async entrar() {
         const sb = await c();
@@ -385,7 +444,7 @@ button{font-family:inherit}
         const dia = hoyEn(CONFIG.zona);
         const [config, actividades, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos] = await Promise.all([
           pide(sb.from("config").select("clave,valor")),
-          pide(sb.from("actividades").select("id,dia,titulo,tipo,origen,orden,estado").eq("dia", dia).neq("estado", "archivada").order("orden").order("id")),
+          pide(sb.from("actividades").select("id,dia,titulo,tipo,origen,referencia,orden,estado").eq("dia", dia).neq("estado", "archivada").order("orden").order("id")),
           pide(sb.from("tiempos").select("id,actividad_id,inicio,actividades(titulo,dia)").is("fin", null)),
           pide(sb.from("aprobaciones").select("id,creada_en,tipo,titulo,recibo,origen,estado,expira_en,decidida_en").order("creada_en", { ascending: false }).limit(20)),
           pide(sb.from("bitacora").select("id,en,actor,canal,evento,detalle").order("en", { ascending: false }).limit(15)),
@@ -393,10 +452,14 @@ button{font-family:inherit}
           pide(sb.from("latidos").select("componente,ultimo_en")),
           pide(sb.from("wa_desconocidos").select("wa_id,intentos")),
         ]);
+        const [correos, agenda] = await Promise.all([
+          pideSiHay(sb.from("correos").select("thread_id,remitente,asunto,ultimo_en,mensajes").eq("estado", "pendiente").order("ultimo_en", { ascending: false }).limit(50)),
+          pideSiHay(sb.from("agenda").select("evento_id,inicio,titulo,enlace,reunion").eq("dia", dia).eq("estado", "vigente").order("inicio")),
+        ]);
         const ids = actividades.map((a) => a.id);
         const tiempos = ids.length ? await pide(sb.from("tiempos").select("id,actividad_id,inicio,fin,segundos").in("actividad_id", ids)) : [];
-        const modo = (config.find((x) => x.clave === "modo") || {}).valor;
-        return { modo: modo === "on" ? "on" : "off", actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos };
+        const valor = (clave) => (config.find((x) => x.clave === clave) || {}).valor;
+        return { modo: valor("modo") === "on" ? "on" : "off", google: valor("google_estado") || null, actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos, correos: correos || [], agenda: agenda || [] };
       },
       async agregar(titulo, tipo, orden) { const sb = await c(); await pide(sb.from("actividades").insert({ titulo, tipo, orden })); },
       async iniciar(id) { const sb = await c(); await pide(sb.rpc("iniciar_cronometro", { p_actividad_id: id })); },
@@ -438,9 +501,17 @@ button{font-family:inherit}
         { id: 2, direccion: "saliente", tipo: "text", texto: "Recibido. Todavía no tengo cerebro conectado; por ahora solo guardo tu mensaje.", creado_en: new Date(t0 - 6 * min + 2000).toISOString() },
         { id: 1, direccion: "entrante", tipo: "text", texto: "¿Qué tengo hoy? (ejemplo)", creado_en: new Date(t0 - 6 * min).toISOString() },
       ],
-      latidos: [{ componente: "puerta", ultimo_en: new Date(t0 - 6 * min).toISOString() }],
+      latidos: [{ componente: "puerta", ultimo_en: new Date(t0 - 6 * min).toISOString() }, { componente: "google", ultimo_en: new Date(t0 - 3 * min).toISOString() }],
       desconocidos: [],
+      google: { conectado: true, en: new Date(t0 - 3 * min).toISOString(), correos: 3, etiqueta: true, eventos: 1, juntas: 1 },
+      correos: [
+        { thread_id: "ej1", remitente: "Proveedor de ejemplo", asunto: "Oferta: carro de 2x12 #3 (ejemplo)", ultimo_en: new Date(t0 - 35 * min).toISOString(), mensajes: 1 },
+        { thread_id: "ej2", remitente: "Cliente de ejemplo", asunto: "Re: disponibilidad de 2x6 #3 (ejemplo)", ultimo_en: new Date(t0 - 190 * min).toISOString(), mensajes: 4 },
+        { thread_id: "ej3", remitente: "Agente aduanal de ejemplo", asunto: "Pedimento pendiente de firma (ejemplo)", ultimo_en: new Date(t0 - 26 * 60 * min).toISOString(), mensajes: 2 },
+      ],
+      agenda: [{ evento_id: "ev1", inicio: new Date(t0 + 45 * min).toISOString(), titulo: "Llamada con cliente (ejemplo)", enlace: null, reunion: null }],
     };
+    m.actividades.push({ id: 5, dia, titulo: "Llamada con cliente (ejemplo)", tipo: "junta", origen: "agenda", referencia: "ev1", orden: 5, estado: "pendiente" });
     const parar = () => m.tiempos.forEach((t) => { if (!t.fin) { t.fin = new Date().toISOString(); t.segundos = Math.floor((Date.parse(t.fin) - Date.parse(t.inicio)) / 1000); } });
     const anota = (actor, evento, detalle = {}) => m.bitacora.unshift({ id: sig++, en: new Date().toISOString(), actor, canal: "pantalla", evento, detalle });
     const arranca = (id) => {
@@ -449,8 +520,13 @@ button{font-family:inherit}
       parar(); m.tiempos.push({ id: sig++, actividad_id: id, inicio: new Date().toISOString(), fin: null, segundos: null });
     };
     return {
-      async sesion() { return { correo: "demo", dueno: true }; },
+      async sesion() { return { correo: "demo", dueno: true, permisoGoogle: "" }; },
       async entrar() {}, async salir() {},
+      async googleEstado() { return { ok: true, configurado: true, conectado: !!(m.google && m.google.conectado) }; },
+      async googleConectar() { return { ok: true }; },
+      async googlePedirPermiso() { m.google = { conectado: true, en: new Date().toISOString(), correos: m.correosGuardados ? m.correosGuardados.length : 0, etiqueta: true }; if (m.correosGuardados) m.correos = m.correosGuardados; anota("dueno", "google_conectado"); },
+      async googleDesconectar() { m.google = { conectado: false, motivo: "desconectado" }; m.correosGuardados = m.correos; m.correos = []; anota("dueno", "google_desconectado"); return { ok: true, conectado: false }; },
+      async googleActualizar() { m.google.en = new Date().toISOString(); return { ok: true }; },
       async cargar() {
         const corriendo = m.tiempos.filter((t) => !t.fin).map((t) => ({ id: t.id, actividad_id: t.actividad_id, inicio: t.inicio, actividades: m.actividades.find((a) => a.id === t.actividad_id) }));
         return JSON.parse(JSON.stringify({ ...m, actividades: m.actividades.filter((a) => a.estado !== "archivada"), corriendo }));
@@ -480,7 +556,8 @@ button{font-family:inherit}
   let datos = null;
   let sesion = null;
   let ocupado = false;
-  const verTodo = { dia: false, ok: false, act: false };
+  let lector = { configurado: false, conectado: false };
+  const verTodo = { dia: false, ok: false, act: false, cor: false };
   const TOPE = 5;
 
   // ── Sonido: sintetizado, sin fragmentos de canciones ──────────────────────
@@ -512,8 +589,8 @@ button{font-family:inherit}
   }
 
   // ── Ventanas: mover, cerrar, traer al frente, recordar posición ───────────
-  const VENTANAS = ["dia", "ok", "actividad", "sabrina", "pendiente"];
-  const abiertas = Object.assign({ dia: true, ok: true, actividad: true, sabrina: false, pendiente: false }, leer("abiertas", {}));
+  const VENTANAS = ["dia", "ok", "correos", "actividad", "sabrina", "pendiente"];
+  const abiertas = Object.assign({ dia: true, ok: true, correos: true, actividad: false, sabrina: false, pendiente: false }, leer("abiertas", {}));
   abiertas.pendiente = false;
   const lugar = leer("lugar", {});
   let cima = 10;
@@ -554,7 +631,6 @@ button{font-family:inherit}
   document.querySelectorAll("[data-abre]").forEach((b) => b.addEventListener("click", () => abre(b.dataset.abre)));
 
   const PENDIENTES = {
-    correos: { titulo: "correos", texto: "Tus correos por responder y tu agenda.", falta: "Falta la credencial de Google para leer tu Gmail y tu Calendar." },
     ventas: { titulo: "ventas", texto: "Una cuenta a la vez, con su ficha y su historial.", falta: "Falta el acceso de solo lectura a NetSuite y a tu CRM." },
     agentes: { titulo: "agentes", texto: "Qué hace cada agente y qué te pide.", falta: "Falta conectar el cerebro de Sabrina." },
   };
@@ -598,6 +674,12 @@ button{font-family:inherit}
   const recorta = (lista, clave) => (verTodo[clave] ? lista : lista.slice(0, TOPE));
   const botonMas = (lista, clave) => lista.length > TOPE ? `<button type="button" class="boton mas" data-mas="${clave}">${verTodo[clave] ? "Ver menos" : `Ver ${lista.length - TOPE} más`}</button>` : "";
 
+  function horaDeJunta(a) {
+    if (a.origen !== "agenda") return "";
+    const e = (datos.agenda || []).find((x) => x.evento_id === a.referencia);
+    return e && e.inicio ? " · " + horaEn(CONFIG.zona, new Date(e.inicio)) : "";
+  }
+
   function pintaDia() {
     const ahora = Date.now(), activa = activaId();
     const lista = datos.actividades.filter((a) => a.tipo !== "otros");
@@ -607,7 +689,7 @@ button{font-family:inherit}
       const esActiva = a.id === activa, hecha = a.estado === "hecha";
       return `<div class="pista${esActiva ? " activa" : ""}${hecha ? " hecha" : ""}">
         <span class="num">${String(i + 1).padStart(2, "0")}</span>
-        <div class="texto"><span class="titulo">${esc(a.titulo)}</span><span class="tenue">${esc(TIPOS[a.tipo] || a.tipo)}</span></div>
+        <div class="texto"><span class="titulo">${esc(a.titulo)}</span><span class="tenue">${esc((TIPOS[a.tipo] || a.tipo) + horaDeJunta(a))}</span></div>
         ${esActiva ? '<span class="ondas" aria-hidden="true"><i></i><i></i><i></i><i></i></span>' : ""}
         <span class="tiempo" data-tiempo="${a.id}">${duracion(segundosDe(a.id, ahora))}</span>
         ${hecha ? "" : `<button type="button" class="boton redondo toca" data-toca="${a.id}" aria-label="${esActiva ? "Pausar" : "Iniciar"}: ${esc(a.titulo)}">${esActiva ? ICONO.pausa : ICONO.sigue}</button>
@@ -658,14 +740,43 @@ button{font-family:inherit}
     $("act-lista").innerHTML = (filas.join("") || '<div class="vacio">Todavía no hay movimientos.</div>') + botonMas(renglones, "act");
   }
 
+  const conectada = () => !!(lector.conectado && datos.google && datos.google.conectado !== false);
+
+  function pintaCorreos() {
+    const lista = datos.correos || [];
+    $("cor-sub").textContent = conectada() && lista.length ? `${lista.length}${lista.length >= 50 ? "+" : ""} hilo${lista.length === 1 ? "" : "s"}` : "";
+    if (!conectada()) {
+      $("cor-lista").innerHTML = `<div class="vacio">Tu correo no está conectado.</div><button type="button" class="boton fuerte" data-google="conectar">Conectar correo y agenda</button><span class="tenue">Solo lectura. Sabrina los revisa cada 10 minutos.</span>`;
+      return;
+    }
+    if (datos.google && datos.google.etiqueta === false) {
+      $("cor-lista").innerHTML = '<div class="vacio">No encontré en tu Gmail la etiqueta «1: to respond».</div>';
+      return;
+    }
+    const cuenta = sesion && sesion.correo && sesion.correo !== "demo" ? `?authuser=${encodeURIComponent(sesion.correo)}` : "";
+    const filas = recorta(lista, "cor").map((c) => `<a class="correo" href="https://mail.google.com/mail/${cuenta}#all/${encodeURIComponent(c.thread_id)}" target="_blank" rel="noopener noreferrer">
+        <span class="quien"><b>${esc(c.remitente)}</b><span class="tenue" style="white-space:nowrap">${esc(hace(c.ultimo_en))}</span></span>
+        <span class="asunto">${esc(c.asunto)}</span>
+      </a>`);
+    $("cor-lista").innerHTML = (filas.join("") || '<div class="vacio">Nada por responder.</div>') + botonMas(lista, "cor");
+  }
+
   function pintaSabrina() {
     const puerta = datos.latidos.find((l) => l.componente === "puerta");
+    const google = datos.latidos.find((l) => l.componente === "google");
     const extranos = datos.desconocidos.reduce((s, d) => s + (d.intentos || 0), 0);
+    const lectura = conectada()
+      ? `<div class="dato"><span>Correo y agenda</span><b>${google ? esc("Leídos " + hace(google.ultimo_en)) : "Conectados"}</b></div>
+         <div class="dos"><button type="button" class="boton" data-google="actualizar">Actualizar ahora</button><button type="button" class="boton" data-google="desconectar">Desconectar</button></div>`
+      : `<div class="dato"><span>Correo y agenda</span><b>Sin conectar</b></div>
+         <button type="button" class="boton fuerte" data-google="conectar">Conectar correo y agenda</button>
+         <span class="tenue">Solo lectura. Sabrina los revisa cada 10 minutos.</span>`;
     $("sab-lista").innerHTML = `
       <div class="dato"><span>Estado</span><b>${datos.modo === "on" ? "Encendida" : "Apagada"}</b></div>
       <div class="dato"><span>La Puerta</span><b>${puerta ? esc("Latió " + hace(puerta.ultimo_en)) : "Aún no recibe avisos de Meta"}</b></div>
       <div class="dato"><span>Números desconocidos</span><b>${datos.desconocidos.length ? `${datos.desconocidos.length} · ${extranos} intentos` : "Ninguno"}</b></div>
-      <div class="vacio">Sin conectar todavía: correos y agenda, ventas, cerebro.</div>`;
+      ${lectura}
+      <div class="vacio">Sin conectar todavía: ventas y cerebro.</div>`;
   }
 
   function pintaCabeza() {
@@ -684,19 +795,34 @@ button{font-family:inherit}
 
   function pintaTodo() {
     if (!datos) return;
-    pintaCabeza(); pintaDia(); pintaOk(); pintaActividad(); pintaSabrina();
+    pintaCabeza(); pintaDia(); pintaOk(); pintaCorreos(); pintaActividad(); pintaSabrina();
   }
 
   // ── Acciones ──────────────────────────────────────────────────────────────
-  async function refresca() {
-    if (!sesion || !sesion.dueno) return;
+  async function refrescaYa() {
     try { datos = await fuente.cargar(); pintaTodo(); }
     catch (e) { brinda("No se pudo actualizar: " + e.message); }
+  }
+  async function refresca() {
+    if (!sesion || !sesion.dueno || ocupado) return;
+    await refrescaYa();
+  }
+  async function leeLector() {
+    const r = await fuente.googleEstado();
+    return r && r.ok ? { configurado: !!r.configurado, conectado: !!r.conectado } : { configurado: false, conectado: false, sinFuncion: !!(r && r.motivo === "sin_funcion") };
+  }
+  // Al volver de Google con el permiso recién dado, se entrega al lector y se olvida.
+  async function terminaConexion() {
+    if (!leer("conectando", false)) return;
+    guardar("conectando", false);
+    if (!sesion.permisoGoogle) { brinda(motivoClaro({ motivo: "sin_permiso" })); return; }
+    const r = await fuente.googleConectar(sesion.permisoGoogle);
+    if (r.ok) { suena("si"); brinda("Tu correo y tu agenda quedaron conectados."); } else { suena("no"); brinda(motivoClaro(r)); }
   }
   async function hacer(sonido, fn) {
     if (ocupado) return;
     ocupado = true;
-    try { await fn(); suena(sonido); await refresca(); }
+    try { await fn(); suena(sonido); await refrescaYa(); }
     catch (e) { suena("no"); brinda(e.message || "No se pudo"); }
     finally { ocupado = false; }
   }
@@ -726,6 +852,26 @@ button{font-family:inherit}
   });
   $("act-lista").addEventListener("click", (e) => { if (e.target.closest("[data-mas]")) { verTodo.act = !verTodo.act; pintaActividad(); } });
   $("b-orbe").addEventListener("click", () => abre("ok", false));
+  $("cor-lista").addEventListener("click", (e) => { if (e.target.closest("[data-mas]")) { verTodo.cor = !verTodo.cor; pintaCorreos(); } });
+  async function accionGoogle(cual) {
+    if (ocupado) return;
+    if (cual === "desconectar" && !window.confirm("¿Desconectar tu correo y tu agenda? Sabrina dejará de leerlos.")) return;
+    ocupado = true;
+    try {
+      if (cual === "conectar") {
+        if (!lector.configurado) { brinda(motivoClaro({ motivo: lector.sinFuncion ? "sin_funcion" : "faltan_secretos" })); return; }
+        guardar("conectando", true);
+        await fuente.googlePedirPermiso();
+      } else {
+        const r = cual === "desconectar" ? await fuente.googleDesconectar() : await fuente.googleActualizar();
+        if (!r.ok) { suena("no"); brinda(motivoClaro(r)); } else suena("si");
+      }
+      lector = await leeLector();
+      await refrescaYa();
+    } catch (e) { suena("no"); brinda(e.message || "No se pudo"); }
+    finally { ocupado = false; }
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-google]"); if (b) accionGoogle(b.dataset.google); });
   $("b-modo").addEventListener("click", () => {
     if (!datos) return;
     const apagar = datos.modo === "on";
@@ -779,8 +925,10 @@ button{font-family:inherit}
     }
     $("muelle").hidden = false; $("b-salir").hidden = DEMO;
     $("nota").hidden = false;
-    $("nota").textContent = DEMO ? "Datos de ejemplo. Los cronómetros corren, pero nada se guarda." : "Tu día, las aprobaciones y la actividad son reales. Correos, ventas y agentes aún no están conectados.";
+    $("nota").textContent = DEMO ? "Datos de ejemplo. Los cronómetros corren, pero nada se guarda." : "Tu día, las aprobaciones, la actividad y tus correos son reales. Ventas y agentes aún no están conectados.";
     pintaVentanas();
+    if (!DEMO) await terminaConexion();
+    lector = await leeLector();
     await refresca();
     setInterval(refresca, CONFIG.cada);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refresca(); });
