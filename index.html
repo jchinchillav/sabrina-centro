@@ -533,7 +533,7 @@ button{font-family:inherit}
         const [correos, agenda, cuentas, toques, sistemas, agentes, preguntas] = await Promise.all([
           pideSiHay(sb.from("correos").select("thread_id,remitente,asunto,ultimo_en,mensajes").eq("estado", "pendiente").order("ultimo_en", { ascending: false }).limit(50)),
           pideSiHay(sb.from("agenda").select("evento_id,inicio,titulo,enlace,reunion").eq("dia", dia).eq("estado", "vigente").order("inicio")),
-          pideSiHay(sb.from("cuentas").select("id,netsuite_id,nombre,tipo,segmento,prioridad,motivo,etapa,ultima_venta,ventas_12m,facturas_12m,moneda,paso,paso_vence,cadencia_dias,angulo,contacto,telefono,correo,ubicacion,nota").order("prioridad").limit(1000)),
+          pideSiHay(sb.from("cuentas").select("id,netsuite_id,nombre,tipo,segmento,prioridad,motivo,etapa,ultima_venta,ultima_orden,ventas_12m,facturas_12m,moneda,paso,paso_vence,cadencia_dias,angulo,contacto,telefono,correo,ubicacion,nota").order("prioridad").limit(1000)),
           pideSiHay(sb.from("toques").select("id,cuenta_id,en,tipo,resultado").gte("en", desde).order("en", { ascending: false }).limit(2000)),
           pideSiHay(sb.from("sistemas").select("clave,nombre,grupo,que_mide,ultimo_dato,estado,nota,medido_en,orden").order("orden")),
           pideSiHay(sb.from("agentes").select("clave,nombre,que_hace,cada,componente,umbral_min,falta,orden").order("orden")),
@@ -924,6 +924,8 @@ button{font-family:inherit}
     if (n >= 1e3) return pre + Math.round(n / 1e3).toLocaleString("es-MX") + " mil";
     return pre + Math.round(n).toLocaleString("es-MX");
   }
+  // Lo más reciente entre factura y orden: con eso se decide si la cuenta está dormida.
+  const ultimaCompra = (c) => [c.ultima_venta, c.ultima_orden].filter(Boolean).sort().pop() || null;
   const sinDias = (t) => String(t || "").replace(/\s*\(\d+ días\)/, "");
   function saltadasHoy() { const s = leer("saltos", null); return s && s.dia === hoyEn(CONFIG.zona) && Array.isArray(s.ids) ? s.ids : []; }
   function saltar(id) { guardar("saltos", { dia: hoyEn(CONFIG.zona), ids: saltadasHoy().filter((x) => x !== id).concat(id) }); }
@@ -950,7 +952,7 @@ button{font-family:inherit}
   function fichaVentas(c, i, total) {
     const hoy = hoyEn(CONFIG.zona);
     const cifras = [];
-    if (c.ultima_venta) cifras.push(`<div><span class="puntos">${diasEntre(c.ultima_venta, hoy)}</span><span class="tenue">días sin comprar · ${esc(fechaCorta(c.ultima_venta))}</span></div>`);
+    if (c.ultima_venta) cifras.push(`<div><span class="puntos">${diasEntre(c.ultima_venta, hoy)}</span><span class="tenue">días sin facturar${c.ultima_orden ? ` · última orden ${esc(fechaCorta(c.ultima_orden))}` : ` · ${esc(fechaCorta(c.ultima_venta))}`}</span></div>`);
     if (c.ventas_12m) cifras.push(`<div><span class="puntos">${esc(dinero(Number(c.ventas_12m), c.moneda))}</span><span class="tenue">12 meses con impuestos · ${c.facturas_12m || 0} fact.</span></div>`);
     const tel = c.telefono ? `<a href="tel:${esc(c.telefono.replace(/[^\d+]/g, ""))}">${esc(c.telefono)}</a>` : "";
     const mail = c.correo && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.correo) ? `<a href="mailto:${esc(c.correo)}">${esc(c.correo)}</a>` : "";
@@ -989,7 +991,7 @@ button{font-family:inherit}
     const i = Math.max(0, tocan.findIndex((c) => c.id === focoVentas));
     const foco = tocan[i];
     const resto = tocan.filter((c) => c !== foco);
-    const siguen = recorta(resto, "ven").map((c) => `<button type="button" class="sigue" data-cuenta="${esc(c.id)}"><b>${esc(c.nombre)}</b><span class="tenue" style="white-space:nowrap">${esc(SEGMENTOS[c.segmento] || c.segmento)}${c.ultima_venta ? ` · ${diasEntre(c.ultima_venta, hoyEn(CONFIG.zona))} d` : ""}</span></button>`);
+    const siguen = recorta(resto, "ven").map((c) => `<button type="button" class="sigue" data-cuenta="${esc(c.id)}"><b>${esc(c.nombre)}</b><span class="tenue" style="white-space:nowrap">${esc(SEGMENTOS[c.segmento] || c.segmento)}${ultimaCompra(c) ? ` · ${diasEntre(ultimaCompra(c), hoyEn(CONFIG.zona))} d` : ""}</span></button>`);
     const ventas = datos.latidos.find((l) => l.componente === "ventas");
     $("ven-lista").innerHTML = (foco ? fichaVentas(foco, i, tocan.length) : '<div class="vacio">Al día: nadie te toca hoy.</div>')
       + (siguen.length ? '<span class="grupo">Siguen</span>' + siguen.join("") + botonMas(resto, "ven") : "")
