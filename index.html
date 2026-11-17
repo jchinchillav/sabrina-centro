@@ -154,6 +154,16 @@ button{font-family:inherit}
 .sigue{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:6px 12px;border-radius:16px;border:0;background:var(--pozo);color:inherit;font:inherit;text-align:left;cursor:pointer}
 .sigue b{font-weight:500;overflow-wrap:anywhere}
 .sigue:hover{opacity:.85}
+.notas{display:flex;flex-direction:column;gap:3px;font-size:13px;line-height:1.35}
+.notas .cuando{color:var(--ink2);font-size:12px}
+.enlaces{display:flex;flex-wrap:wrap;gap:4px 14px}
+.enlace{border:0;background:none;padding:4px 0;min-height:32px;color:var(--ink2);font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.editor{display:flex;flex-direction:column;gap:6px}
+.editor textarea,.editor input{width:100%;border-radius:16px;border:1px solid var(--line);background:var(--pozo);color:inherit;font:inherit;font-size:13.5px;padding:8px 12px}
+.editor textarea{resize:vertical;min-height:72px}
+.plazos{display:flex;flex-wrap:wrap;gap:6px}
+.plazos .boton{height:32px;font-size:12.5px;padding:0 12px}
+.recordatorio{padding:6px 10px;border-radius:12px;border:1px solid var(--warn);color:var(--ink);font-size:13px}
 .charla{display:flex;flex-direction:column;gap:4px;padding:8px 12px;border-radius:16px;background:var(--pozo)}
 .charla .q{font-weight:500;overflow-wrap:anywhere;white-space:pre-wrap}
 .charla .r{font-size:13.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -180,6 +190,7 @@ button{font-family:inherit}
   .aviso{top:252px}
   #v-ventas{top:308px}
   #v-ventas .cuerpo{max-height:calc(100vh - 464px);min-height:200px}
+  .enlace{min-height:26px;padding:2px 0}
 }
 
 /* ── Pantallas angostas: las ventanas se apilan ── */
@@ -438,6 +449,9 @@ button{font-family:inherit}
     google_conectado: "Conectaste tu correo y tu agenda",
     google_desconectado: "Se desconectó tu correo y tu agenda",
     toque_registrado: "Registraste un toque",
+    nota_cuenta: "Comentaste sobre",
+    cuenta_pospuesta: "Pospusiste",
+    cuenta_reactivada: "Reactivaste",
     actividad_agregada: "Sabrina agregó a tu día",
     actividad_hecha: "Sabrina marcó hecha",
     cerebro_actuo: "Sabrina anotó lo que le pediste",
@@ -530,7 +544,7 @@ button{font-family:inherit}
           pide(sb.from("wa_desconocidos").select("wa_id,intentos")),
         ]);
         const desde = new Date(Date.now() - 400 * 86400e3).toISOString();
-        const [correos, agenda, cuentas, toques, sistemas, agentes, preguntas] = await Promise.all([
+        const [correos, agenda, cuentas, toques, sistemas, agentes, preguntas, notas, seguimiento] = await Promise.all([
           pideSiHay(sb.from("correos").select("thread_id,remitente,asunto,ultimo_en,mensajes").eq("estado", "pendiente").order("ultimo_en", { ascending: false }).limit(50)),
           pideSiHay(sb.from("agenda").select("evento_id,inicio,titulo,enlace,reunion").eq("dia", dia).eq("estado", "vigente").order("inicio")),
           pideSiHay(sb.from("cuentas").select("id,netsuite_id,nombre,tipo,segmento,prioridad,motivo,etapa,ultima_venta,ultima_orden,ventas_12m,facturas_12m,moneda,paso,paso_vence,cadencia_dias,angulo,contacto,telefono,correo,ubicacion,nota").order("prioridad").limit(1000)),
@@ -538,13 +552,17 @@ button{font-family:inherit}
           pideSiHay(sb.from("sistemas").select("clave,nombre,grupo,que_mide,ultimo_dato,estado,nota,medido_en,orden").order("orden")),
           pideSiHay(sb.from("agentes").select("clave,nombre,que_hace,cada,componente,umbral_min,falta,orden").order("orden")),
           pideSiHay(sb.from("preguntas").select("id,en,canal,pregunta,respuesta,estado,motivo,costo_usd").order("en", { ascending: false }).limit(60)),
+          pideSiHay(sb.from("notas_cuenta").select("id,cuenta_id,en,texto,canal").order("en", { ascending: false }).limit(500)),
+          pideSiHay(sb.from("cuenta_seguimiento").select("cuenta_id,pospuesta_hasta,motivo,actualizado_en")),
         ]);
         const ids = actividades.map((a) => a.id);
         const tiempos = ids.length ? await pide(sb.from("tiempos").select("id,actividad_id,inicio,fin,segundos").in("actividad_id", ids)) : [];
         const valor = (clave) => (config.find((x) => x.clave === clave) || {}).valor;
-        return { modo: valor("modo") === "on" ? "on" : "off", google: valor("google_estado") || null, netsuite: typeof valor("netsuite_url") === "string" ? valor("netsuite_url") : null, actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos, correos: correos || [], agenda: agenda || [], cuentas: cuentas || [], toques: toques || [], sistemas: sistemas || [], agentes: agentes || [], preguntas: preguntas || [] };
+        return { modo: valor("modo") === "on" ? "on" : "off", google: valor("google_estado") || null, netsuite: typeof valor("netsuite_url") === "string" ? valor("netsuite_url") : null, actividades, tiempos, corriendo, aprobaciones, bitacora, mensajes, latidos, desconocidos, correos: correos || [], agenda: agenda || [], cuentas: cuentas || [], toques: toques || [], sistemas: sistemas || [], agentes: agentes || [], preguntas: preguntas || [], notas: notas || [], seguimiento: seguimiento || [] };
       },
       async preguntar(texto) { return llamar("cerebro", "preguntar", { texto }); },
+      async nota(cuenta, texto) { const sb = await c(); await pide(sb.rpc("agregar_nota_cuenta", { p_cuenta: cuenta, p_texto: texto })); },
+      async posponer(cuenta, hasta, motivo) { const sb = await c(); await pide(sb.rpc("posponer_cuenta", { p_cuenta: cuenta, p_hasta: hasta, p_motivo: motivo || null })); },
       async agregar(titulo, tipo, orden) { const sb = await c(); await pide(sb.from("actividades").insert({ titulo, tipo, orden })); },
       async iniciar(id) { const sb = await c(); await pide(sb.rpc("iniciar_cronometro", { p_actividad_id: id })); },
       async pausar() { const sb = await c(); await pide(sb.rpc("pausar_cronometro")); },
@@ -604,6 +622,8 @@ button{font-family:inherit}
         { id: "ej:5", netsuite_id: null, nombre: "Cuenta sin datos (ejemplo)", tipo: "prospecto", segmento: "depurar", prioridad: 9, motivo: "Depurar: datos sin verificar", etapa: "Depurar", cadencia_dias: 30 },
       ],
       toques: [{ id: 1, cuenta_id: "ej:4", en: new Date(t0 - 3 * 86400e3).toISOString(), tipo: "llamada", resultado: "hecho" }],
+      notas: [{ id: 1, cuenta_id: "ej:2", en: new Date(t0 - 2 * 86400e3).toISOString(), texto: "Pidió precio de SYP #2 para enero (ejemplo).", canal: "pantalla" }],
+      seguimiento: [],
       preguntas: [
         { id: 1, en: new Date(t0 - 25 * min).toISOString(), canal: "whatsapp", pregunta: "¿A quién le toca hoy? (ejemplo)", respuesta: "*Primero: Cliente dormido de ejemplo*, 90 días sin comprar y US$ 479 mil en 12 meses.\n• Llama a Compras: 000 000 0000\n• Ficha: https://ejemplo.app.netsuite.com/app/common/entity/custjob.nl?id=1", estado: "lista", motivo: null, costo_usd: 0.012 },
       ],
@@ -656,6 +676,19 @@ button{font-family:inherit}
         anota("dueno", decision === "aprobar" ? "aprobacion_aprobada" : "aprobacion_rechazada", { titulo: a.titulo });
       },
       async modo(x) { m.modo = x; anota("dueno", x === "off" ? "apagado" : "encendido"); },
+      async nota(cuenta, texto) {
+        const c = m.cuentas.find((x) => x.id === cuenta);
+        if (!c) throw new Error("Esa cuenta no existe");
+        m.notas.unshift({ id: sig++, cuenta_id: cuenta, en: new Date().toISOString(), texto, canal: "pantalla" });
+        anota("dueno", "nota_cuenta", { titulo: c.nombre });
+      },
+      async posponer(cuenta, hasta, motivo) {
+        const c = m.cuentas.find((x) => x.id === cuenta);
+        if (!c) throw new Error("Esa cuenta no existe");
+        if (hasta && hasta <= hoyEn(CONFIG.zona)) throw new Error("La fecha tiene que ser después de hoy");
+        m.seguimiento = m.seguimiento.filter((x) => x.cuenta_id !== cuenta).concat({ cuenta_id: cuenta, pospuesta_hasta: hasta, motivo: hasta ? motivo || null : null, actualizado_en: new Date().toISOString() });
+        anota("dueno", hasta ? "cuenta_pospuesta" : "cuenta_reactivada", { titulo: c.nombre });
+      },
       async preguntar(texto) {
         const agrega = /^agrega (.+)$/i.exec(texto.trim());
         let respuesta = "(ejemplo) En la pantalla real contesta Claude con tus datos de este momento.";
@@ -685,6 +718,8 @@ button{font-family:inherit}
   let lector = { configurado: false, conectado: false };
   const verTodo = { dia: false, ok: false, act: false, cor: false, ven: false };
   let focoVentas = null;
+  let editando = null; // { tipo: "nota" | "posponer", cuenta }
+  let verPospuestas = false;
   const TOPE = 5;
 
   // ── Sonido: sintetizado, sin fragmentos de canciones ──────────────────────
@@ -936,17 +971,57 @@ button{font-family:inherit}
     const ultimo = new Map();
     for (const t of datos.toques || []) if (!ultimo.has(t.cuenta_id)) ultimo.set(t.cuenta_id, t);
     const saltos = saltadasHoy();
-    const tocan = [], alDia = [], depurar = [];
+    const seguimiento = new Map((datos.seguimiento || []).map((x) => [x.cuenta_id, x]));
+    const tocan = [], alDia = [], depurar = [], pospuestas = [];
     for (const c of datos.cuentas || []) {
       if (c.segmento === "depurar") { depurar.push(c); continue; }
       const t = ultimo.get(c.id) || null;
+      const sg = seguimiento.get(c.id);
+      if (sg && sg.pospuesta_hasta && sg.pospuesta_hasta > hoy) { pospuestas.push({ ...c, seguimiento: sg }); continue; }
+      // Ya llegó la fecha que pusiste: regresa arriba con su motivo hasta que la toques.
+      if (sg && sg.pospuesta_hasta && !(t && hoyEn(CONFIG.zona, new Date(t.en)) >= sg.pospuesta_hasta)) {
+        tocan.push({ ...c, ultimo: t, proximo: null, recordatorio: sg });
+        continue;
+      }
       const proximo = t ? sumaDias(hoyEn(CONFIG.zona, new Date(t.en)), t.resultado === "sin_respuesta" ? Math.min(REINTENTO_DIAS, c.cadencia_dias) : c.cadencia_dias) : null;
       (proximo && proximo > hoy ? alDia : tocan).push({ ...c, ultimo: t, proximo });
     }
     const vuelta = (c) => saltos.indexOf(c.id);
-    tocan.sort((a, b) => vuelta(a) - vuelta(b) || a.prioridad - b.prioridad || (b.ventas_12m || 0) - (a.ventas_12m || 0) || a.nombre.localeCompare(b.nombre, "es"));
+    tocan.sort((a, b) => vuelta(a) - vuelta(b) || (b.recordatorio ? 1 : 0) - (a.recordatorio ? 1 : 0) || a.prioridad - b.prioridad || (b.ventas_12m || 0) - (a.ventas_12m || 0) || a.nombre.localeCompare(b.nombre, "es"));
     const hechos = new Set((datos.toques || []).filter((t) => hoyEn(CONFIG.zona, new Date(t.en)) === hoy).map((t) => t.cuenta_id)).size;
-    return { tocan, alDia, depurar, hechos };
+    pospuestas.sort((a, b) => a.seguimiento.pospuesta_hasta.localeCompare(b.seguimiento.pospuesta_hasta));
+    return { tocan, alDia, depurar, hechos, pospuestas };
+  }
+
+  function editorVentas(c) {
+    if (!editando || editando.cuenta !== c.id) {
+      return `<div class="enlaces"><button type="button" class="enlace" data-editar="nota" data-cuenta-id="${esc(c.id)}">Agregar comentario</button><button type="button" class="enlace" data-editar="posponer" data-cuenta-id="${esc(c.id)}">Posponer con fecha</button></div>`;
+    }
+    if (editando.tipo === "nota") {
+      return `<form class="editor" data-form="nota" data-cuenta-id="${esc(c.id)}">
+        <textarea id="nota-texto" maxlength="1000" placeholder="Qué pasa con este cliente: por qué no compra, qué quedó, qué sigue…" aria-label="Comentario"></textarea>
+        <div class="dos"><button type="submit" class="boton fuerte">Guardar comentario</button><button type="button" class="boton" data-cancelar>Cancelar</button></div>
+      </form>`;
+    }
+    const hoy = hoyEn(CONFIG.zona);
+    return `<form class="editor" data-form="posponer" data-cuenta-id="${esc(c.id)}">
+      <span class="tenue">Sale de la ráfaga y ese día regresa arriba con este motivo.</span>
+      <div class="plazos">
+        <button type="button" class="boton" data-plazo="7">1 semana</button>
+        <button type="button" class="boton" data-plazo="30">1 mes</button>
+        <button type="button" class="boton" data-plazo="90">3 meses</button>
+      </div>
+      <input id="pos-fecha" type="date" min="${sumaDias(hoy, 1)}" max="${sumaDias(hoy, 730)}" value="${sumaDias(hoy, 30)}" aria-label="Recuérdamelo el">
+      <input id="pos-motivo" type="text" maxlength="500" placeholder="Por qué o qué hacer ese día (opcional)" aria-label="Motivo">
+      <div class="dos"><button type="submit" class="boton fuerte">Posponer</button><button type="button" class="boton" data-cancelar>Cancelar</button></div>
+    </form>`;
+  }
+
+  function notasHtml(id) {
+    const suyas = (datos.notas || []).filter((n) => n.cuenta_id === id);
+    if (!suyas.length) return "";
+    const filas = suyas.slice(0, 3).map((n) => `<span><span class="cuando">${esc(fechaCorta(hoyEn(CONFIG.zona, new Date(n.en))))}</span> · ${esc(n.texto)}</span>`);
+    return `<div class="notas">${filas.join("")}${suyas.length > 3 ? `<span class="cuando">y ${suyas.length - 3} comentarios más</span>` : ""}</div>`;
   }
 
   function fichaVentas(c, i, total) {
@@ -963,13 +1038,16 @@ button{font-family:inherit}
     return `<div class="tarjeta ficha">
       <div class="fila"><span class="chip ${c.prioridad <= 2 ? "mal" : c.prioridad <= 4 ? "warn" : ""}">${esc(SEGMENTOS[c.segmento] || c.segmento)}</span><span class="tenue">${i + 1} de ${total}</span></div>
       <span class="nombre">${esc(c.nombre)}</span>
+      ${c.recordatorio ? `<span class="recordatorio">Recordatorio${c.recordatorio.motivo ? `: ${esc(c.recordatorio.motivo)}` : ""} · la pospusiste hasta el ${esc(fechaCorta(c.recordatorio.pospuesta_hasta))}</span>` : ""}
       <span>${esc(sinDias(c.motivo))}</span>
       ${cifras.length ? `<div class="cifras">${cifras.join("")}</div>` : ""}
       ${c.angulo ? `<p class="angulo"><span class="tenue">Ángulo: </span>${esc(c.angulo)}</p>` : ""}
       ${paso}
       ${contacto.length ? `<div class="contacto">${contacto.join("")}</div>` : '<span class="falta">Sin contacto cargado.</span>'}
       ${c.nota ? `<span class="tenue">${esc(c.nota)}</span>` : ""}
+      ${notasHtml(c.id)}
       <div class="fila"><span class="tenue">${esc(ult)}</span>${ns}</div>
+      ${editorVentas(c)}
       <div class="acciones">
         <button type="button" class="boton fuerte" data-toque="llamada:hecho" data-cuenta-id="${esc(c.id)}">Llamé</button>
         <button type="button" class="boton" data-toque="whatsapp:hecho" data-cuenta-id="${esc(c.id)}">WhatsApp</button>
@@ -980,13 +1058,15 @@ button{font-family:inherit}
     </div>`;
   }
 
-  function pintaVentas() {
+  function pintaVentas(forzar = false) {
+    // Mientras escribes un comentario o eliges fecha, la actualización automática no lo borra.
+    if (!forzar && editando && document.querySelector("#ven-lista [data-form]")) return;
     if (!(datos.cuentas || []).length) {
       $("ven-sub").textContent = "";
       $("ven-lista").innerHTML = '<div class="vacio">Todavía no hay cuentas cargadas.</div>';
       return;
     }
-    const { tocan, alDia, depurar, hechos } = colaVentas();
+    const { tocan, alDia, depurar, hechos, pospuestas } = colaVentas();
     $("ven-sub").textContent = `${tocan.length} por tocar · ${hechos} hoy`;
     const i = Math.max(0, tocan.findIndex((c) => c.id === focoVentas));
     const foco = tocan[i];
@@ -995,7 +1075,13 @@ button{font-family:inherit}
     const ventas = datos.latidos.find((l) => l.componente === "ventas");
     $("ven-lista").innerHTML = (foco ? fichaVentas(foco, i, tocan.length) : '<div class="vacio">Al día: nadie te toca hoy.</div>')
       + (siguen.length ? '<span class="grupo">Siguen</span>' + siguen.join("") + botonMas(resto, "ven") : "")
-      + `<span class="tenue">${alDia.length} al día${depurar.length ? ` · ${depurar.length} por depurar (sin datos verificados)` : ""}${ventas ? ` · datos cargados ${esc(hace(ventas.ultimo_en))}` : ""}</span>`;
+      + `<span class="tenue">${alDia.length} al día${depurar.length ? ` · ${depurar.length} por depurar (sin datos verificados)` : ""}${ventas ? ` · datos cargados ${esc(hace(ventas.ultimo_en))}` : ""}</span>`
+      + (pospuestas.length ? `<button type="button" class="enlace" data-ver-pospuestas>${verPospuestas ? "Ocultar" : "Ver"} ${pospuestas.length} pospuesta${pospuestas.length === 1 ? "" : "s"}</button>` : "")
+      + (verPospuestas ? pospuestas.map((c) => `<div class="tarjeta" style="gap:2px;padding:8px 12px">
+          <div class="fila"><span class="titulo">${esc(c.nombre)}</span><span class="tenue" style="white-space:nowrap">hasta ${esc(fechaCorta(c.seguimiento.pospuesta_hasta))}</span></div>
+          ${c.seguimiento.motivo ? `<span class="tenue">${esc(c.seguimiento.motivo)}</span>` : ""}
+          <div class="enlaces"><button type="button" class="enlace" data-reactivar="${esc(c.id)}">Regresarla a la ráfaga hoy</button></div>
+        </div>`).join("") : "");
   }
 
   // ── Pregúntale: el mismo cerebro que contesta por WhatsApp ────────────────
@@ -1034,7 +1120,7 @@ button{font-family:inherit}
       return `<div class="charla"><span class="tenue">${esc(cuando)}</span><span class="q">${esc(p.pregunta)}</span>${r}</div>`;
     });
     if (pensando) filas.push(`<div class="charla"><span class="tenue">ahora</span><span class="q">${esc(pensando)}</span><div class="r tenue">pensando…</div></div>`);
-    $("cha-lista").innerHTML = filas.join("") || '<div class="vacio">Pregúntale lo que sea de tu día, tus correos, tu agenda, la ráfaga de ventas o los sistemas. También puede anotar: «agrega a mi día cotizar a Recipak», «llamé a Pallets M3, no contestó».</div>';
+    $("cha-lista").innerHTML = filas.join("") || '<div class="vacio">Pregúntale lo que sea de tu día, tus correos, tu agenda, la ráfaga de ventas o los sistemas. También puede anotar: «agrega a mi día cotizar el carro de 2×12», «llamé a [cliente], no contestó», «[cliente]: están saturados, recuérdamelo el 15 de enero».</div>';
     const lista = $("cha-lista"); lista.scrollTop = lista.scrollHeight;
   }
 
@@ -1156,15 +1242,37 @@ button{font-family:inherit}
     if (b) hacer(b.dataset.decide === "aprobar" ? "si" : "no", () => fuente.decidir(Number(b.dataset.id), b.dataset.decide));
     else if (mas) { verTodo.ok = !verTodo.ok; pintaOk(); }
   });
+  $("ven-lista").addEventListener("submit", (e) => {
+    const form = e.target.closest("[data-form]");
+    if (!form) return;
+    e.preventDefault();
+    const id = form.dataset.cuentaId, c = (datos.cuentas || []).find((x) => x.id === id), nombre = c ? c.nombre : "la cuenta";
+    if (form.dataset.form === "nota") {
+      const texto = $("nota-texto").value.trim();
+      if (!texto) { brinda("Escribe el comentario."); return; }
+      hacer("hecho", async () => { await fuente.nota(id, texto); editando = null; brinda(`Comentario guardado en ${nombre}.`); });
+    } else {
+      const hasta = $("pos-fecha").value, motivo = $("pos-motivo").value.trim();
+      if (!hasta) { brinda("Elige la fecha."); return; }
+      hacer("pausa", async () => { await fuente.posponer(id, hasta, motivo); editando = null; focoVentas = null; brinda(`${nombre}: pospuesta hasta el ${fechaCorta(hasta)}. Ese día te la recuerdo.`); });
+    }
+  });
   $("ven-lista").addEventListener("click", (e) => {
+    const editar = e.target.closest("[data-editar]"), cancelar = e.target.closest("[data-cancelar]"), plazo = e.target.closest("[data-plazo]");
+    const reactivar = e.target.closest("[data-reactivar]"), verPos = e.target.closest("[data-ver-pospuestas]");
+    if (editar) { editando = { tipo: editar.dataset.editar, cuenta: editar.dataset.cuentaId }; pintaVentas(true); const campo = $(editando.tipo === "nota" ? "nota-texto" : "pos-fecha"); if (campo) campo.focus(); return; }
+    if (cancelar) { editando = null; pintaVentas(true); return; }
+    if (plazo) { $("pos-fecha").value = sumaDias(hoyEn(CONFIG.zona), Number(plazo.dataset.plazo)); return; }
+    if (verPos) { verPospuestas = !verPospuestas; pintaVentas(true); return; }
+    if (reactivar) { const id = reactivar.dataset.reactivar; hacer("si", async () => { await fuente.posponer(id, null, null); focoVentas = id; brinda("De regreso en la ráfaga."); }); return; }
     const toque = e.target.closest("[data-toque]"), salta = e.target.closest("[data-saltar]"), cuenta = e.target.closest("[data-cuenta]"), mas = e.target.closest("[data-mas]");
     if (toque) {
       const [tipo, resultado] = toque.dataset.toque.split(":"), id = toque.dataset.cuentaId;
       const c = (datos.cuentas || []).find((x) => x.id === id);
-      hacer(resultado === "hecho" ? "hecho" : "pausa", async () => { await fuente.toque(id, tipo, resultado); focoVentas = null; brinda(`Anotado: ${c ? c.nombre : "cuenta"} · ${(TOQUES[tipo] || tipo).toLowerCase()}${resultado === "hecho" ? "" : ", sin respuesta"}`); });
-    } else if (salta) { saltar(salta.dataset.saltar); focoVentas = null; suena("pausa"); pintaVentas(); }
-    else if (cuenta) { focoVentas = cuenta.dataset.cuenta; suena("abre"); pintaVentas(); $("ven-lista").scrollTop = 0; }
-    else if (mas) { verTodo.ven = !verTodo.ven; pintaVentas(); }
+      hacer(resultado === "hecho" ? "hecho" : "pausa", async () => { await fuente.toque(id, tipo, resultado); focoVentas = null; editando = null; brinda(`Anotado: ${c ? c.nombre : "cuenta"} · ${(TOQUES[tipo] || tipo).toLowerCase()}${resultado === "hecho" ? "" : ", sin respuesta"}`); });
+    } else if (salta) { saltar(salta.dataset.saltar); focoVentas = null; editando = null; suena("pausa"); pintaVentas(true); }
+    else if (cuenta) { focoVentas = cuenta.dataset.cuenta; editando = null; suena("abre"); pintaVentas(true); $("ven-lista").scrollTop = 0; }
+    else if (mas) { verTodo.ven = !verTodo.ven; pintaVentas(true); }
   });
   $("cha-alta").addEventListener("submit", async (e) => {
     e.preventDefault();
